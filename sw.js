@@ -19,6 +19,7 @@ const FILES = [
   'js/core/image.js',
   'js/core/share.js',
   'js/screens/about.js',
+  'js/screens/profile.js',
   'vendor/qrcode.js',
   'vendor/xlsx.mini.min.js',
   'icons/icon-180.png',
