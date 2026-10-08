@@ -17,3 +17,7 @@ test('bands use the light blue and text uses the dark blue', () => {
   assert.match(css, /--brand-text: #314974;/);
   assert.match(css, /\.brand-logo \{[^}]*background: var\(--brand\)/);
 });
+
+test('the header logo is 54px tall (50% bigger than the original 36px)', () => {
+  assert.match(read('css/app.css'), /\.brand-logo \{[^}]*height: 54px/);
+});
