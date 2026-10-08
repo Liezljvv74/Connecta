@@ -1,6 +1,22 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esc } from '../js/ui.js';
+import { esc, canReloadNow } from '../js/ui.js';
+
+const fakeDoc = ({ hidden = false, open = null, focused = null } = {}) => ({
+  hidden,
+  querySelector: sel => (sel === 'dialog[open], form#person' ? open : null),
+  activeElement: focused && { matches: sel => sel === 'input, textarea, select' && focused },
+});
+
+test('an app update waits while someone is typing or in a dialog or a person form', () => {
+  assert.equal(canReloadNow(fakeDoc({ focused: true })), false);
+  assert.equal(canReloadNow(fakeDoc({ open: {} })), false);
+});
+
+test('an app update reloads when the app is idle or hidden', () => {
+  assert.equal(canReloadNow(fakeDoc()), true);
+  assert.equal(canReloadNow(fakeDoc({ hidden: true, focused: true, open: {} })), true);
+});
 import { safeFileName } from '../js/core/share.js';
 
 test('esc makes scanned or typed text safe to put in HTML', () => {

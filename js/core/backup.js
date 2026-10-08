@@ -15,7 +15,20 @@ export function readBackup(text) {
     throw new Error('This file is not a Connecta backup (it could not be read).');
   }
   if (raw?.app !== 'connecta') throw new Error('This file is not a Connecta backup.');
-  return migrate(raw);
+  const data = migrate(raw); // throws first for files from a newer version
+  if (!looksIntact(raw)) throw new Error('This backup file is damaged.');
+  return data;
+}
+
+const isObject = v => v !== null && typeof v === 'object' && !Array.isArray(v);
+const isId = v => typeof v === 'string' && /^[\w-]+$/.test(v); // ids end up in HTML attributes
+const isBusiness = b => isObject(b) && isId(b.id) && isObject(b.overrides) && Array.isArray(b.defaultFields);
+
+// A file that parses but would break the app (or empty it) is refused, never restored.
+function looksIntact(raw) {
+  return isObject(raw.me) && isObject(raw.settings)
+    && Array.isArray(raw.businesses) && raw.businesses.every(isBusiness)
+    && Array.isArray(raw.people) && raw.people.every(p => isObject(p) && isId(p.id));
 }
 
 export const backupFileName = (now = new Date()) => `connecta-backup-${isoDate(now)}.json`;

@@ -46,7 +46,7 @@ function renderForm(root, ctx, person, isNew) {
       const data = Object.fromEntries(new FormData(root.querySelector('#person')));
       if (!data.name.trim()) { toast('Add at least a name.'); return; }
       for (const [key, value] of Object.entries(data)) person[key] = value.trim();
-      if (isNew) ctx.state.people.push(person);
+      if (isNew && !ctx.state.people.includes(person)) ctx.state.people.push(person); // double tap logs once
       await ctx.save('people');
       if (person.event) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');

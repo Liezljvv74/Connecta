@@ -56,7 +56,8 @@ export function render(root, ctx, params) {
       <button type="button" class="primary" data-act="add">Add business</button>
     </section>`;
 
-  root.querySelector('#me').addEventListener('change', e => {
+  // Save on every keystroke, so nothing typed is lost if the app closes or updates.
+  root.querySelector('#me').addEventListener('input', e => {
     me[e.target.name] = e.target.value.trim();
     ctx.save('me');
   });
@@ -74,6 +75,7 @@ export function render(root, ctx, params) {
         me.photo = ''; await ctx.save('me'); ctx.refresh();
         break;
       case 'add': {
+        btn.disabled = true; // a double tap must not create two businesses
         const b = newBusiness(list.length ? list[list.length - 1].order + 1 : 0);
         businesses.push(b);
         await ctx.save('businesses');
@@ -126,7 +128,7 @@ function renderBusiness(root, ctx, id) {
       </div>`;
   };
 
-  root.addEventListener('change', e => {
+  root.addEventListener('input', e => {
     const { name, value, checked } = e.target;
     if (name.startsWith('o:')) {
       const key = name.slice(2);

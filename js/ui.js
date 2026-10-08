@@ -5,6 +5,10 @@ const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '
 // Use for EVERY typed or scanned value placed into HTML.
 export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ENTITIES[c]);
 
+// An app update reloads the page; never do that under someone's fingers.
+export const canReloadNow = (doc = document) =>
+  doc.hidden || !(doc.querySelector('dialog[open], form#person') || doc.activeElement?.matches('input, textarea, select'));
+
 export function toast(message) {
   const t = document.createElement('div');
   t.className = 'toast';

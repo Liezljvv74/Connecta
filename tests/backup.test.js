@@ -6,7 +6,7 @@ import { emptyData, migrate, SCHEMA_VERSION } from '../js/core/model.js';
 const data = {
   ...emptyData(),
   me: { ...emptyData().me, firstName: 'Jane', photo: 'data:image/jpeg;base64,AAA' },
-  businesses: [{ id: 'b1', name: 'Acme', logo: 'data:image/png;base64,BBB' }],
+  businesses: [{ id: 'b1', name: 'Acme', logo: 'data:image/png;base64,BBB', title: '', overrides: {}, defaultFields: ['mobile'], order: 0 }],
   people: [{ id: 'p1', name: 'Sam' }],
 };
 
@@ -37,6 +37,20 @@ test('rejects a cut-off backup', () => {
 
 test('rejects a backup from a newer app version', () => {
   assert.throws(() => readBackup(JSON.stringify({ app: 'connecta', schemaVersion: SCHEMA_VERSION + 1 })), /newer version/);
+});
+
+test('rejects a backup whose lists are damaged instead of restoring nothing', () => {
+  const bad = { app: 'connecta', schemaVersion: SCHEMA_VERSION, me: {}, settings: {}, people: [] };
+  assert.throws(() => readBackup(JSON.stringify({ ...bad, businesses: 'oops' })), /damaged/);
+  assert.throws(() => readBackup(JSON.stringify({ ...bad, businesses: [], people: null })), /damaged/);
+  assert.throws(() => readBackup(JSON.stringify({ ...bad, businesses: [], me: 'x' })), /damaged/);
+});
+
+test('rejects a backup with a broken business entry', () => {
+  const base = { app: 'connecta', schemaVersion: SCHEMA_VERSION, me: {}, settings: {}, people: [] };
+  assert.throws(() => readBackup(JSON.stringify({ ...base, businesses: [{ id: 'b1', name: 'Acme' }] })), /damaged/);
+  assert.throws(() => readBackup(JSON.stringify({ ...base, businesses: [{ id: '"><img src=x>', name: 'A', overrides: {}, defaultFields: [] }] })), /damaged/);
+  assert.throws(() => readBackup(JSON.stringify({ ...base, businesses: [], people: [{ id: 'x" onclick="y', name: 'Sam' }] })), /damaged/);
 });
 
 test('backupFileName uses the local date', () => {

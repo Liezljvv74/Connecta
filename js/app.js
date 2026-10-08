@@ -1,13 +1,13 @@
 // Starts the app: loads saved data, shows the screen named in the URL hash, registers offline support.
 import { loadAll, savePart, requestPersist } from './core/storage.js';
-import { esc } from './ui.js';
+import { esc, toast, canReloadNow } from './ui.js';
 
 const TITLES = { share: 'Share', people: 'People I met', scan: 'Scan a card', profile: 'Profile', settings: 'Settings', about: 'About Connecta' };
 
 const ctx = {
   state: null,
   params: null,
-  save: key => savePart(key, ctx.state[key]),
+  save: key => savePart(key, ctx.state[key]).catch(() => toast('Could not save. Your phone storage may be full.')),
   go(name, params = null) {
     ctx.params = params;
     if (location.hash === '#' + name) show();
@@ -45,6 +45,13 @@ async function show() {
   main.replaceChildren(root);
   scrollTo(0, 0);
   cleanup = screen.render(root, ctx, params) ?? null;
+  reloadIfUpdated();
+}
+
+// A new version took over: reload once so the new files are used, but only when nobody is typing.
+let updated = false;
+function reloadIfUpdated() {
+  if (updated && canReloadNow()) location.reload();
 }
 
 async function start() {
@@ -60,8 +67,12 @@ async function start() {
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller;
     navigator.serviceWorker.register('sw.js');
-    // A new version took over: reload once so the new files are used. Skipped on first install.
-    navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController) location.reload(); });
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) return; // first install: nothing to refresh
+      updated = true;
+      reloadIfUpdated();
+    });
+    document.addEventListener('visibilitychange', reloadIfUpdated);
   }
 }
 
