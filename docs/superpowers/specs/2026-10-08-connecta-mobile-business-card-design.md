@@ -22,7 +22,7 @@ A phone-only digital business card. The owner runs several businesses, picks one
 |---|---|---|
 | Platform | Installable web app (PWA) shared by link | Works on iPhone and Android, no app store, no fees |
 | Tech | Plain HTML/CSS/JavaScript modules, no framework, no build step | Smallest, fewest moving parts; structured so a framework or app-store wrapper (Capacitor) can be added later |
-| Hosting | GitHub Pages (free, static) | One fixed link for the group; no server logic |
+| Hosting | GitHub Pages (free, static), repository named **Connecta** | One fixed link for the group; no server logic |
 | Storage | On the phone only (IndexedDB) | Privacy, no server |
 | Contact details | Personal details shared across businesses; each business can override or add | Owner chose option C |
 | What is shared | Per-business default fields + per-person on/off switches on the Share screen | Owner chose option C |
@@ -55,6 +55,8 @@ Navigation is a bottom tab bar: **Share · People · Scan · Profile · Settings
 ### 3.2 Profile → My details
 Personal details shared by every business:
 first name, last name, photo, mobile, work phone, email, website, address, LinkedIn/social link.
+
+Every input shows its character limit, e.g. "(max 40 characters)", and does not accept more. Limits: first/last name 40, business name 60, job title 60, phones 25, email 80, website 100, LinkedIn/social 100, address 150. With these limits a card with every field filled still fits in one QR code; only heavy use of accents can exceed it, which the §4.3 warning catches.
 
 ### 3.3 Profile → Businesses
 List of businesses; add, edit, delete, reorder. Each business has:
@@ -98,6 +100,7 @@ Read-only information pages:
 - **Installing on your phone** — iPhone (Safari → Share → Add to Home Screen; must be Safari) and Android (Chrome → Install app).
 - **How people receive your card** — scanning with iPhone camera / Android camera or Google Lens, the one confirm tap, and the send-card options.
 - **Good to know** — QR code has no photo/logo; turn brightness up for scanning; follow-ups go to your calendar; updates arrive automatically when the app opens online.
+- **Problems or suggestions?** — "Contact me:" with a tappable email link to Liezljvv74@Gmail.com. Kept in one place in the code (`js/version.js`) so it is easy to change.
 - **Version** — app version number.
 
 ## 4. Sharing details

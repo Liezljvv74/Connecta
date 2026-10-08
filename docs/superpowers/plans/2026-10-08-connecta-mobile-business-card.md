@@ -21,7 +21,8 @@
 - File names: `connecta-backup-YYYY-MM-DD.json`; `connecta-people-YYYY-MM-DD.xlsx` / `.csv`, or `connecta-people-<event-slug>-YYYY-MM-DD.<ext>` when filtered to one event. Dates use the phone's local calendar.
 - Every user-typed or scanned value inserted into HTML goes through `esc()` from `js/ui.js`.
 - Every app file is listed in `sw.js` `FILES`. Every release bumps `APP_VERSION` in `js/version.js` and `VERSION` in `sw.js` together (enforced by a test).
-- The About section is titled exactly **"Backup and store your data"**.
+- The About section is titled exactly **"Backup and store your data"**. About ends with **"Problems or suggestions?"** showing `SUPPORT_EMAIL` from `js/version.js` (currently `Liezljvv74@Gmail.com`).
+- Every Profile input shows "(max N characters)" and enforces `MAX_LENGTHS` from `model.js`.
 - Copy is plain, friendly English for non-technical users.
 - Commit messages end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
@@ -90,6 +91,7 @@ export function render(root, ctx, params) // root is a fresh <div>; may return a
 - Produces:
   - `SCHEMA_VERSION: number` (1)
   - `PERSONAL_FIELDS: string[]`, `SHAREABLE: string[]`, `OVERRIDABLE: string[]`, `LABELS: Record<string,string>`
+  - `MAX_LENGTHS: Record<string,number>` (character limit per input; business name is key `name`)
   - `emptyData(): Data`; `migrate(raw: object|null): Data` (throws `Error` containing "newer version")
   - `newId(): string`; `newBusiness(order?: number): Business`; `newPerson(fields?: object): Person`; `isoDate(d?: Date): 'YYYY-MM-DD'`
   - `Data = { schemaVersion, me, businesses: Business[], people: Person[], settings: { lastBusinessId, lastEvent, lastBackupAt } }`
@@ -192,6 +194,12 @@ export const LABELS = {
   website: 'Website',
   address: 'Address',
   social: 'LinkedIn / social link',
+};
+
+// Character limits per input so a full card still fits in one QR code (checked by tests/qr.test.js).
+export const MAX_LENGTHS = {
+  firstName: 40, lastName: 40, name: 60, title: 60, mobile: 25, workPhone: 25,
+  email: 80, website: 100, address: 150, social: 100,
 };
 
 export function emptyData() {
@@ -755,6 +763,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { QR_MAX_BYTES, byteLength, fitsQr, qrSvg } from '../js/core/qr.js';
+import { buildVCard } from '../js/core/vcard.js';
+import { buildCard } from '../js/core/card.js';
+import { MAX_LENGTHS, SHAREABLE } from '../js/core/model.js';
 
 const qrcode = createRequire(import.meta.url)('../vendor/qrcode.js');
 
@@ -774,6 +785,13 @@ test('qrSvg draws a scalable SVG, including non-English text', () => {
   const svg = qrSvg('BEGIN:VCARD\r\nFN:Zoë Müller\r\nEND:VCARD\r\n', qrcode);
   assert.ok(svg.startsWith('<svg'));
   assert.ok(svg.includes('viewBox'));
+});
+
+test('a card with every field at its character limit still fits the QR code', () => {
+  const full = key => 'x'.repeat(MAX_LENGTHS[key]);
+  const me = Object.fromEntries(['firstName', 'lastName', 'mobile', 'workPhone', 'email', 'website', 'address', 'social'].map(k => [k, full(k)]));
+  const biz = { name: full('name'), title: full('title'), overrides: {}, defaultFields: SHAREABLE };
+  assert.ok(fitsQr(buildVCard(buildCard(me, biz))));
 });
 
 test('qrSvg handles the largest allowed card', () => {
@@ -1521,6 +1539,9 @@ Expected: FAIL (`sw.js` / `js/version.js` not found).
 ```js
 // Bump together with VERSION in sw.js on every release (a test checks they match).
 export const APP_VERSION = '1.0.0';
+
+// Shown under About → "Problems or suggestions?". Change it here.
+export const SUPPORT_EMAIL = 'Liezljvv74@Gmail.com';
 ```
 
 - [ ] **Step 4: Write `tools/make-icons.mjs` and generate the icons**
@@ -1779,7 +1800,7 @@ start();
 
 ```js
 // About Connecta (ⓘ): privacy, backups, installing, how people receive the card (spec §3.7).
-import { APP_VERSION } from '../version.js';
+import { APP_VERSION, SUPPORT_EMAIL } from '../version.js';
 import { lastBackupText } from '../core/backup.js';
 import { esc } from '../ui.js';
 
@@ -1833,6 +1854,11 @@ export function render(root, ctx) {
         <li>Follow-up reminders are added to your phone's calendar.</li>
         <li>Updates arrive automatically the next time you open the app with internet. Your data is not touched.</li>
       </ul>
+    </details>
+
+    <details>
+      <summary>Problems or suggestions?</summary>
+      <p>Contact me: <a href="mailto:${esc(SUPPORT_EMAIL)}?subject=Connecta%20feedback">${esc(SUPPORT_EMAIL)}</a></p>
     </details>
 
     <p class="hint">Connecta version ${esc(APP_VERSION)}</p>`;
@@ -1899,7 +1925,7 @@ Expected: all tests PASS.
 Start `python -m http.server 8080` in the background from the project root. In Playwright: navigate to `http://localhost:8080/#about` and resize to 390×844.
 Expected:
 - The header reads "About Connecta" with the ⓘ icon.
-- Six sections are shown, and the third is titled "Backup and store your data" and shows "Never backed up".
+- Seven sections are shown; the last is "Problems or suggestions?" with a mailto link to Liezljvv74@Gmail.com, and the third is titled "Backup and store your data" and shows "Never backed up".
 - The bottom tabs are visible.
 - The console has no errors apart from failed imports of screens not built yet.
 
@@ -1935,7 +1961,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ```js
 // Profile: personal details shared by all businesses, and the list of businesses (spec §3.2, §3.3).
-import { LABELS, SHAREABLE, OVERRIDABLE, newBusiness } from '../core/model.js';
+import { LABELS, SHAREABLE, OVERRIDABLE, MAX_LENGTHS, newBusiness } from '../core/model.js';
 import { sortedBusinesses } from '../core/card.js';
 import { shrinkImage } from '../core/image.js';
 import { esc, toast, confirmDialog, pickFile } from '../ui.js';
@@ -1943,11 +1969,14 @@ import { esc, toast, confirmDialog, pickFile } from '../ui.js';
 const TEXT_FIELDS = ['firstName', 'lastName', 'mobile', 'workPhone', 'email', 'website', 'address', 'social'];
 const INPUT_TYPES = { mobile: 'tel', workPhone: 'tel', email: 'email', website: 'url', social: 'url' };
 
+// Every input shows and enforces its character limit, so the QR code never overflows (spec §3.2).
 function field(name, label, value, type = 'text', placeholder = '') {
+  const max = MAX_LENGTHS[name.replace(/^o:/, '')];
+  const text = `${esc(label)} <small>(max ${max} characters)</small>`;
   if (name.endsWith('address')) {
-    return `<label>${esc(label)}<textarea name="${name}" rows="2" placeholder="${esc(placeholder)}">${esc(value)}</textarea></label>`;
+    return `<label>${text}<textarea name="${name}" rows="2" maxlength="${max}" placeholder="${esc(placeholder)}">${esc(value)}</textarea></label>`;
   }
-  return `<label>${esc(label)}<input name="${name}" type="${type}" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`;
+  return `<label>${text}<input name="${name}" type="${type}" maxlength="${max}" value="${esc(value)}" placeholder="${esc(placeholder)}"></label>`;
 }
 
 async function pickImage(type) {
@@ -2125,6 +2154,7 @@ Start the server; Playwright at 390×844; go to `http://localhost:8080/#profile`
 6. Reload the page. Expected: every value is still there, including the accented name and the order. This checks storage.
 7. Logo: use `browser_file_upload` with `icons/icon-192.png` after tapping **Add logo**. Expected: the logo shows in the editor and in the list.
 8. Delete Bloom and confirm. Expected: only Acme remains.
+9. Every text input shows "(max N characters)" and stops at the limit: type 30 digits into Mobile and expect 25 kept.
 
 Stop the server.
 
@@ -2301,7 +2331,7 @@ Start the server; Playwright at 390×844.
 3. Read the QR content with `browser_evaluate`. Fetch `js/core/vcard.js` and `js/core/card.js` with a dynamic `import()`, build the card for the stored state, and check that `buildVCard` output contains `FN:Zoë Müller`, `EMAIL;TYPE=INTERNET:zoe@acme.com` and `ORG:Acme`.
 4. Untick Mobile. Expected: the QR re-renders. Reload `#share`. Expected: Mobile is ticked again (switches reset).
 5. Tap the business name and choose Bloom. Expected: Bloom shows. Reload. Expected: Bloom is still selected (last used business).
-6. Make the QR too full: in Profile, set Address to 1,000 × "x" and tick Address for Bloom. Expected: the Share screen shows "Too much for one QR code. Switch off or shorten: Address, …". Untick Address. Expected: the QR returns.
+6. Make the QR too full. The character limits make this nearly impossible by typing, so simulate it, as if old or restored data were too long: with `browser_evaluate`, import `/js/core/storage.js`, load the data, set `me.address` to 600 × "é" and save it with `savePart("me", …)`, then reload `#share` with Address shared. Expected: "Too much for one QR code. Switch off or shorten: Address, …". Untick Address. Expected: the QR returns.
 7. **Send card** in desktop Chromium: either the share sheet opens or the fallback dialog appears with "Download contact file / Send as text message / Send as email". Choose download and check that a `.vcf` download happened (`browser_network_requests` or the download event).
 8. Tap **Log this person**. Expected: navigates to People (an error until Task 13).
 
@@ -2922,27 +2952,28 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 ### Task 17: Publish for real-phone testing (needs the owner's go-ahead)
 
-Publishing creates a public GitHub repository. The code becomes public; no user data is in it. **Stop and ask the owner before running any step here.** They need a GitHub account, and they must confirm the repository name and that it may be public (free GitHub Pages requires a public repo).
+The owner approved creating a GitHub repository named **Connecta** (2026-10-08). It is created at the start of execution and each task's commit is pushed. Free GitHub Pages requires a public repository: the code is public, but no user data is ever in it.
 
 - [ ] **Step 1: Check GitHub login**
 
 Run: `gh auth status`
 If not logged in, ask the owner to run `! gh auth login`.
 
-- [ ] **Step 2: Create the repository and push** (only after the owner confirms)
+- [ ] **Step 2: Make sure the repository exists and is up to date**
 
 ```bash
-gh repo create connecta --public --source . --remote origin --push
+git remote get-url origin || gh repo create Connecta --public --source . --remote origin --push
+git push
 ```
 
 - [ ] **Step 3: Turn on GitHub Pages**
 
 ```bash
 BRANCH=$(git branch --show-current)
-gh api -X POST "repos/{owner}/connecta/pages" -f "source[branch]=$BRANCH" -f "source[path]=/"
-gh api "repos/{owner}/connecta/pages" --jq .html_url
+gh api -X POST "repos/{owner}/Connecta/pages" -f "source[branch]=$BRANCH" -f "source[path]=/"
+gh api "repos/{owner}/Connecta/pages" --jq .html_url
 ```
-Expected: prints the link, e.g. `https://<user>.github.io/connecta/`. It can take a minute or two to go live.
+Expected: prints the link, e.g. `https://<user>.github.io/Connecta/`. It can take a minute or two to go live.
 
 - [ ] **Step 4: Hand over**
 
