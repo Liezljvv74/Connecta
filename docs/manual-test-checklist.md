@@ -8,7 +8,7 @@ Run after publishing to GitHub Pages; the camera and install need HTTPS. Use one
 - [ ] Open from the home screen; turn on flight mode; close and reopen. Every screen still works.
 
 ## Set up
-- [ ] Add photo, name with an accent (e.g. "Zoë"), mobile, email.
+- [ ] Add photo, name with an accent (e.g. "Zoë"), mobile, email. A photo taken upright on the phone shows upright (not sideways).
 - [ ] Each field shows "(max N characters)" and stops accepting text at the limit.
 - [ ] Add two businesses with logos; one with its own email.
 
@@ -26,7 +26,7 @@ Run after publishing to GitHub Pages; the camera and install need HTTPS. Use one
 
 ## People I met
 - [ ] Log this person after sharing; event pre-filled on the next entry.
-- [ ] Reminder: the follow-up appears in the phone calendar on the right date with a 9am alert.
+- [ ] Reminder: the follow-up appears in the phone calendar on the right date with a 9am alert. (On Android, note whether the share sheet offers the calendar; if not, report it.)
 - [ ] Save contact from the log opens the phone's contact screen.
 - [ ] Export Excel: opens in Excel or Google Sheets on the phone. Phone numbers keep their leading 0 and +.
 - [ ] Export CSV opens too.
