@@ -7,7 +7,7 @@ export function render(root, ctx) {
   root.innerHTML = `
     <details open>
       <summary>What Connecta does</summary>
-      <p>Connecta is your business card on your phone. Pick one of your businesses, let people scan the QR code, or send them your contact file. Afterwards, note who you met so you remember to follow up.</p>
+      <p>Connecta is your digital business card, with quick networking notes. Pick one of your businesses, let people scan the QR code, or send them your contact file. Afterwards, note who you met so you remember to follow up.</p>
     </details>
 
     <details>

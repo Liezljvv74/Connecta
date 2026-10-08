@@ -1,6 +1,34 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { esc, canReloadNow } from '../js/ui.js';
+import { esc, canReloadNow, keepScreenAwake } from '../js/ui.js';
+
+const tick = () => new Promise(r => setTimeout(r, 0));
+const fakeScreenDoc = { visibilityState: 'visible', addEventListener() {}, removeEventListener() {} };
+
+test('the screen lock is released when leaving the Share screen', async () => {
+  let released = 0;
+  const nav = { wakeLock: { request: async () => ({ release: async () => { released++; } }) } };
+  const stop = keepScreenAwake(nav, fakeScreenDoc);
+  await tick();
+  stop();
+  assert.equal(released, 1);
+});
+
+test('a screen lock granted after leaving the Share screen is released straight away', async () => {
+  let grant;
+  let released = 0;
+  const nav = { wakeLock: { request: () => new Promise(r => { grant = r; }) } };
+  const stop = keepScreenAwake(nav, fakeScreenDoc);
+  stop();
+  grant({ release: async () => { released++; } });
+  await tick();
+  assert.equal(released, 1);
+});
+
+test('phones without a screen lock are fine', () => {
+  const stop = keepScreenAwake({}, fakeScreenDoc);
+  stop();
+});
 
 const fakeDoc = ({ hidden = false, open = null, focused = null } = {}) => ({
   hidden,

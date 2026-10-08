@@ -81,14 +81,47 @@ function addValue(p, field, label, value) {
   else addExtra(p, label, value);
 }
 
+const isQuotedPrintable = params => params.some(p => /QUOTED-PRINTABLE/i.test(p));
+
+// Unfolds continuation lines, plus the "=" soft line breaks older (vCard 2.1) cards use.
+function logicalLines(text) {
+  const lines = [];
+  for (const line of text.replace(/\r?\n[ \t]/g, '').split(/\r?\n/)) {
+    const prev = lines[lines.length - 1];
+    if (prev?.endsWith('=') && isQuotedPrintable(prev.slice(0, prev.indexOf(':')).split(';'))) lines[lines.length - 1] = prev.slice(0, -1) + line;
+    else lines.push(line);
+  }
+  return lines;
+}
+
+// "Zo=C3=AB" → "Zoë", read in the charset the card names (UTF-8 if none).
+function decodeQuotedPrintable(value, charset) {
+  const bytes = [];
+  for (let i = 0; i < value.length; i++) {
+    if (value[i] === '=' && /^[0-9A-F]{2}$/i.test(value.slice(i + 1, i + 3))) {
+      bytes.push(parseInt(value.slice(i + 1, i + 3), 16));
+      i += 2;
+    } else {
+      bytes.push(...new TextEncoder().encode(value[i]));
+    }
+  }
+  try {
+    return new TextDecoder(charset || 'utf-8').decode(new Uint8Array(bytes));
+  } catch {
+    return new TextDecoder().decode(new Uint8Array(bytes)); // unknown charset name
+  }
+}
+
 function parseVCard(text) {
   const p = blankPerson();
   let nameFromN = '';
-  for (const line of text.replace(/\r?\n[ \t]/g, '').split(/\r?\n/)) {
+  for (const line of logicalLines(text)) {
     const i = line.indexOf(':');
     if (i < 0) continue;
-    const prop = line.slice(0, i).split(';')[0].toUpperCase().replace(/^ITEM\d+\./, '');
-    const value = line.slice(i + 1);
+    const params = line.slice(0, i).split(';');
+    const prop = params[0].toUpperCase().replace(/^ITEM\d+\./, '');
+    const charset = params.find(x => /^CHARSET=/i.test(x))?.slice(8);
+    const value = isQuotedPrintable(params) ? decodeQuotedPrintable(line.slice(i + 1), charset) : line.slice(i + 1);
     switch (prop) {
       case 'FN': p.name = unesc(value); break;
       case 'N': nameFromN = value.split(';').slice(0, 2).reverse().map(unesc).filter(Boolean).join(' '); break;

@@ -9,6 +9,28 @@ export const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ENTITIES[c]);
 export const canReloadNow = (doc = document) =>
   doc.hidden || !(doc.querySelector('dialog[open], form#person') || doc.activeElement?.matches('input, textarea, select'));
 
+// Keeps the screen on (while someone scans the QR). Returns a function that lets it dim again,
+// including a lock the phone grants only after we've already left.
+export function keepScreenAwake(nav = navigator, doc = document) {
+  let lock = null;
+  let stopped = false;
+  const request = async () => {
+    try {
+      const granted = await nav.wakeLock?.request('screen');
+      if (stopped) granted?.release().catch(() => {});
+      else lock = granted;
+    } catch { /* unsupported or refused: the screen may dim */ }
+  };
+  const onVisible = () => { if (doc.visibilityState === 'visible') request(); };
+  doc.addEventListener('visibilitychange', onVisible);
+  request();
+  return () => {
+    stopped = true;
+    doc.removeEventListener('visibilitychange', onVisible);
+    lock?.release().catch(() => {});
+  };
+}
+
 export function toast(message) {
   const t = document.createElement('div');
   t.className = 'toast';

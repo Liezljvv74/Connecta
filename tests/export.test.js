@@ -48,6 +48,11 @@ test('CSV: BOM, quoting, formula guard, phone numbers untouched', () => {
   assert.ok(csv.includes(`Bob,"'=HYPERLINK(""x"")",0821\r\n`));
 });
 
+test('CSV guards dash-separated numbers Excel would calculate, but not plain phone numbers', () => {
+  const csv = toCsv([['+27-82-555-1234', '-5+3', '+27 (82) 555 1234', '082 555 1234']]);
+  assert.ok(csv.includes(`'+27-82-555-1234,'-5+3,+27 (82) 555 1234,082 555 1234\r\n`));
+});
+
 test('Excel keeps phone numbers and formula-looking notes as text', () => {
   const sheet = XLSX.read(toXlsx(exportRows(people, {}), XLSX), { type: 'array' }).Sheets.People;
   assert.equal(sheet.C2.t, 's');

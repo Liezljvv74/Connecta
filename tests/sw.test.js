@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { APP_VERSION } from '../js/version.js';
+import { buildHash } from '../tools/build-hash.mjs';
 
 const root = new URL('../', import.meta.url);
 const sw = readFileSync(new URL('sw.js', root), 'utf8');
@@ -21,4 +22,8 @@ test('every cached file exists', () => {
 
 test('the cache name matches the app version', () => {
   assert.ok(sw.includes(`const VERSION = 'connecta-${APP_VERSION}';`));
+});
+
+test('sw.js is stamped for the current code (run "npm run stamp" after changing any app file)', () => {
+  assert.ok(sw.includes(`const BUILD = '${buildHash(sw)}';`), 'app files changed since the last stamp: run npm run stamp');
 });

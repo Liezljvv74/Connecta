@@ -22,8 +22,8 @@ export function exportRows(people, { contacts = true, notes = true, event = '' }
 }
 
 // Scanned cards are untrusted: stop spreadsheet apps running text as a formula.
-// Phone numbers like "+27 82 555" (digits, spaces, brackets, +, -) are left alone.
-const looksLikeFormula = v => /^[=@\t\r]/.test(v) || /^[+-].*[^\d\s()+-]/.test(v);
+// "+27 82 555" or "+27 (82) 555" is left alone; "+27-82-555" is guarded because Excel would subtract.
+const looksLikeFormula = v => /^[=@\t\r]/.test(v) || /^[+-].*[^\d\s()]/.test(v);
 
 export function toCsv(rows) {
   const field = v => {

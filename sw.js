@@ -1,5 +1,9 @@
-// Offline support: caches every app file. Bump VERSION (with js/version.js) on every release.
-const VERSION = 'connecta-1.0.0';
+// Offline support: caches every app file.
+// VERSION matches js/version.js. BUILD is a fingerprint of the app files, written by `npm run stamp`;
+// any code change alters it, so phones always pick up the new files (a test checks it is current).
+const VERSION = 'connecta-1.0.1';
+const BUILD = 'f479f5baa40b';
+const CACHE = `${VERSION}-${BUILD}`;
 const FILES = [
   './',
   'index.html',
@@ -34,14 +38,14 @@ const FILES = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(VERSION)
+  e.waitUntil(caches.open(CACHE)
     .then(cache => cache.addAll(FILES.map(f => new Request(f, { cache: 'reload' }))))
     .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim()));
 });
 

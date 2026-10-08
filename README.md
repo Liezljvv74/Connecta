@@ -45,9 +45,10 @@ Edit `SUPPORT_EMAIL` in `js/version.js`, then release a new version (below).
 
 ## Releasing a new version
 
-1. Change the code and run `npm test`.
-2. Bump `APP_VERSION` in `js/version.js` **and** `VERSION` in `sw.js` to the same number (a test checks they match).
-3. Commit and push to `main`. Phones pick up the update the next time the app is opened online.
+1. Change the code.
+2. Bump `APP_VERSION` in `js/version.js` **and** `VERSION` in `sw.js` to the same number (a test checks they match). This is the number shown in About.
+3. Run `npm run stamp`. It writes a fingerprint of all app files into `sw.js`, so phones always fetch the new files. `npm test` fails if you forget.
+4. Run `npm test`, then commit and push to `main`. Phones pick up the update the next time the app is opened online.
 
 ## Publishing (GitHub Pages, free)
 

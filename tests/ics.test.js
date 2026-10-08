@@ -13,6 +13,14 @@ test('an all-day event on the follow-up date with a 9am reminder', () => {
   ]) assert.ok(ics.includes(line + '\r\n'), line);
 });
 
+test('long lines are folded at 75 bytes without splitting accented letters', () => {
+  const notes = 'Zoë wants a quote for the café rebrand, and a follow-up about the Müller account. '.repeat(3);
+  const ics = followUpIcs({ ...person, notes }, new Date('2026-10-08T10:00:00Z'));
+  const enc = new TextEncoder();
+  for (const line of ics.split('\r\n')) assert.ok(enc.encode(line).length <= 75, `line over 75 bytes: ${line.slice(0, 30)}`);
+  assert.ok(ics.replace(/\r\n /g, '').includes(`Notes: ${notes.replace(/,/g, '\\,')}`));
+});
+
 test('a follow-up date is required', () => {
   assert.throws(() => followUpIcs({ ...person, followUpDate: '' }), /follow-up date/);
 });

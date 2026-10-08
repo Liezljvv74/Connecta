@@ -3,7 +3,7 @@ import { buildCard, availableFields, pickBusiness, sortedBusinesses, longestFiel
 import { buildVCard, plainText } from '../core/vcard.js';
 import { qrSvg, fitsQr } from '../core/qr.js';
 import { makeFile, canShareFiles, shareFile, downloadFile, shareText, emailText, safeFileName } from '../core/share.js';
-import { esc, dialog, toast } from '../ui.js';
+import { esc, dialog, toast, keepScreenAwake } from '../ui.js';
 
 export function render(root, ctx) {
   const { me, businesses, settings } = ctx.state;
@@ -25,14 +25,7 @@ export function render(root, ctx) {
   let biz = pickBusiness(named, settings.lastBusinessId);
   let hidden = new Set(); // per-person switches; reset every time this screen opens
 
-  // Keep the screen on while someone scans.
-  let wakeLock = null;
-  const lock = async () => {
-    try { wakeLock = await navigator.wakeLock?.request('screen'); } catch { /* unsupported or refused: the screen may dim */ }
-  };
-  const onVisible = () => { if (document.visibilityState === 'visible') lock(); };
-  document.addEventListener('visibilitychange', onVisible);
-  lock();
+  const letScreenDim = keepScreenAwake();
 
   function draw() {
     const card = buildCard(me, biz, hidden);
@@ -93,10 +86,7 @@ export function render(root, ctx) {
   });
 
   draw();
-  return () => {
-    document.removeEventListener('visibilitychange', onVisible);
-    wakeLock?.release().catch(() => {});
-  };
+  return letScreenDim;
 }
 
 async function sendCard(card) {
