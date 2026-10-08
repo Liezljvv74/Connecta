@@ -2,7 +2,7 @@
 // VERSION matches js/version.js. BUILD is a fingerprint of the app files, written by `npm run stamp`;
 // any code change alters it, so phones always pick up the new files (a test checks it is current).
 const VERSION = 'connecta-1.0.1';
-const BUILD = 'f479f5baa40b';
+const BUILD = '28d3ed3b5d53';
 const CACHE = `${VERSION}-${BUILD}`;
 const FILES = [
   './',

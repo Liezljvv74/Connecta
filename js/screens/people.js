@@ -65,7 +65,7 @@ function renderList(root, ctx) {
   root.innerHTML = `
     <div class="actions">
       <button type="button" class="primary" data-act="new">Add person</button>
-      <button type="button" data-act="export" ${people.length ? '' : 'disabled'}>Export</button>
+      <button type="button" data-act="export">Export to Excel</button>
     </div>
     <input type="search" id="q" placeholder="Search name, company, event, notes" aria-label="Search people">
     <ul class="list" id="list"></ul>`;
@@ -116,6 +116,7 @@ function renderList(root, ctx) {
         shareFile(makeFile(personVCard(p), `${safeFileName(p.name)}.vcf`, 'text/vcard'), p.name);
         break;
       case 'export':
+        if (!people.length) { toast('Log someone first, then you can export.'); break; }
         exportDialog(people);
         break;
     }
