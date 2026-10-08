@@ -23,6 +23,7 @@ const FILES = [
   'js/screens/share.js',
   'js/screens/people.js',
   'js/screens/scan.js',
+  'js/screens/settings.js',
   'vendor/qrcode.js',
   'vendor/qr-scanner.min.js',
   'vendor/qr-scanner-worker.min.js',
