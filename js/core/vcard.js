@@ -62,3 +62,71 @@ export function personVCard(p) {
     note: [p.event && `Met at: ${p.event}`, p.notes, p.extra].filter(Boolean).join('\n'),
   });
 }
+
+// ---- Reading scanned cards ----
+
+const unesc = v => v.replace(/\\n/gi, '\n').replace(/\\([,;:\\])/g, '$1');
+
+const splitUnescaped = v => v.split(/(?<!\\);/);
+
+const blankPerson = () => ({ name: '', company: '', phone: '', email: '', website: '', extra: '' });
+
+function addExtra(p, label, value) {
+  if (value) p.extra = p.extra ? `${p.extra}\n${label}: ${value}` : `${label}: ${value}`;
+}
+
+// First value fills the main field; later ones go to "Other details".
+function addValue(p, field, label, value) {
+  if (!p[field]) p[field] = value;
+  else addExtra(p, label, value);
+}
+
+function parseVCard(text) {
+  const p = blankPerson();
+  let nameFromN = '';
+  for (const line of text.replace(/\r?\n[ \t]/g, '').split(/\r?\n/)) {
+    const i = line.indexOf(':');
+    if (i < 0) continue;
+    const prop = line.slice(0, i).split(';')[0].toUpperCase().replace(/^ITEM\d+\./, '');
+    const value = line.slice(i + 1);
+    switch (prop) {
+      case 'FN': p.name = unesc(value); break;
+      case 'N': nameFromN = value.split(';').slice(0, 2).reverse().map(unesc).filter(Boolean).join(' '); break;
+      case 'ORG': p.company = unesc(splitUnescaped(value)[0]); break;
+      case 'TEL': addValue(p, 'phone', 'Phone', unesc(value.replace(/^tel:/i, ''))); break;
+      case 'EMAIL': addValue(p, 'email', 'Email', unesc(value)); break;
+      case 'URL': addValue(p, 'website', 'Link', unesc(value)); break;
+      case 'TITLE': addExtra(p, 'Title', unesc(value)); break;
+      case 'ADR': addExtra(p, 'Address', splitUnescaped(value).map(unesc).filter(Boolean).join(', ')); break;
+      case 'NOTE': addExtra(p, 'Note', unesc(value)); break;
+    }
+  }
+  if (!p.name) p.name = nameFromN;
+  return p;
+}
+
+function parseMeCard(text) {
+  const p = blankPerson();
+  for (const field of splitUnescaped(text.replace(/^MECARD:/i, ''))) {
+    const i = field.indexOf(':');
+    if (i < 0) continue;
+    const key = field.slice(0, i).toUpperCase();
+    const value = unesc(field.slice(i + 1));
+    if (key === 'N') p.name = value.split(',').map(s => s.trim()).reverse().filter(Boolean).join(' ');
+    else if (key === 'ORG') p.company = value;
+    else if (key === 'TEL') addValue(p, 'phone', 'Phone', value);
+    else if (key === 'EMAIL') addValue(p, 'email', 'Email', value);
+    else if (key === 'URL') addValue(p, 'website', 'Link', value);
+    else if (key === 'ADR') addExtra(p, 'Address', value);
+    else if (key === 'NOTE') addExtra(p, 'Note', value);
+  }
+  return p;
+}
+
+// Returns the person on a scanned contact QR code, or null if it isn't one.
+export function parseScanned(text) {
+  const t = (text || '').trim();
+  if (/^BEGIN:VCARD/i.test(t)) return parseVCard(t);
+  if (/^MECARD:/i.test(t)) return parseMeCard(t);
+  return null;
+}
