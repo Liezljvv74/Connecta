@@ -72,7 +72,11 @@ Deleting a business asks for confirmation. Log entries that referenced it keep t
   - **Add follow-up reminder** — creates a calendar event file (.ics) and opens it via the share sheet or download, so it lands in the phone's calendar.
   - **Save to my contacts** — creates a contact file for that person and opens it.
   - Edit, delete (with confirmation).
-- **Export** — the whole log as a spreadsheet file (CSV), via share sheet or download.
+- **Export** — opens an export choice, then delivers the file via share sheet or download:
+  - **What to include:** Contact details, Event notes (event, notes, follow-up date, date met, business shared), or both. At least one must be ticked.
+  - **Which people:** all, or one event (picked from the event tags in the log).
+  - **Format:** **Excel (.xlsx)** (default) or CSV. Excel keeps phone numbers as text, so leading zeros and `+` country codes are not lost; CSV is for other spreadsheet apps.
+  - File name: `connecta-people-YYYY-MM-DD.xlsx` (or `-<event>-` when filtered to one event).
 
 ### 3.5 Scan
 - Opens the camera and reads another person's QR card.
@@ -90,7 +94,7 @@ Deleting a business asks for confirmation. Log entries that referenced it keep t
 Read-only information pages:
 - **What Connecta does** — one paragraph.
 - **Privacy** — everything is stored only on this phone; nothing is sent anywhere unless you share or back it up yourself; no accounts, tracking or analytics.
-- **Backing up your data** — why it matters (iPhones can clear web-app data when storage is low or the app is unused for a long time), step-by-step how to back up and restore, and where to keep the file (Files, Google Drive, email to yourself). Shows last backup date.
+- **Backup and store your data** — why it matters (iPhones can clear web-app data when storage is low or the app is unused for a long time), step-by-step how to back up and restore, and where to keep the file (Files, Google Drive, email to yourself). Shows last backup date.
 - **Installing on your phone** — iPhone (Safari → Share → Add to Home Screen; must be Safari) and Android (Chrome → Install app).
 - **How people receive your card** — scanning with iPhone camera / Android camera or Google Lens, the one confirm tap, and the send-card options.
 - **Good to know** — QR code has no photo/logo; turn brightness up for scanning; follow-ups go to your calendar; updates arrive automatically when the app opens online.
@@ -146,7 +150,7 @@ js/core/                 logic only, no screen code — reusable by any future U
   vcard.js               build vCards (QR and file versions), parse scanned vCard/MECARD, plain-text card
   card.js                merge personal + business + switches into the shared field list
   backup.js              create and validate backup files
-  csv.js                 export People log
+  export.js              People log export: pick columns/rows, write Excel (.xlsx) or CSV
   ics.js                 follow-up calendar file
   image.js               shrink photos/logos
   share.js               share sheet / download / text fallbacks
@@ -160,6 +164,7 @@ README.md                structure, how to run, how to publish, how to upgrade
 **Libraries** (copied into `vendor/`, exact versions recorded in README):
 - QR drawing: `qrcode-generator` (small, no dependencies).
 - QR reading: `qr-scanner` (uses the phone's built-in detector where available, falls back to its own decoder on iPhone).
+- Excel writing: SheetJS (`xlsx`) mini build, loaded only when an Excel export is requested so normal app start stays fast.
 
 ## 7. Error handling summary
 
@@ -184,14 +189,14 @@ README.md                structure, how to run, how to publish, how to upgrade
 - Parsing scanned vCard 3.0/4.0 and MECARD.
 - Plain-text card format.
 - Backup: round trip, rejecting wrong/newer files.
-- CSV and .ics output.
+- Export: column choice (contacts / notes / both), event filter, phone numbers kept as text in Excel, CSV escaping; .ics output.
 
 **Manual checklist on real phones (iPhone + Android):**
 - Scan the QR code with the iPhone Camera and Android Camera / Google Lens; confirm one-tap save with accents intact.
 - Send card via WhatsApp and email; open and save the file on both phones; photo and logo appear.
 - Text fallback produces a readable message.
 - Scan another app's QR card into People.
-- Follow-up reminder lands in the calendar; CSV opens in a spreadsheet app.
+- Follow-up reminder lands in the calendar; Excel export opens in Excel / Google Sheets on the phone with phone numbers intact; CSV opens too.
 - Install to home screen on both; works in flight mode.
 - Backup on one phone, restore on another.
 - Tune the QR size limit based on results.
