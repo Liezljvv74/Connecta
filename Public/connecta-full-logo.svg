@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" role="img"><title>Connecta: Meet, Link, Grow</title><svg class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-labelledby="mark-title mark-desc" x="0" y="0" width="200" height="200">
+            <title id="mark-title">Connecta network mark</title>
+            <desc id="mark-desc">Three colorful people connected in a shared circle.</desc>
+            <path d="M69 67C80 51 120 51 131 67M67 101C68 121 80 139 94 146M133 101C132 121 120 139 106 146" fill="none" stroke="#c5e5d9" stroke-width="11" stroke-linecap="round"/>
+            <circle cx="100" cy="91" r="10" fill="#f0c94c"/>
+            <circle cx="64" cy="53" r="18" fill="#0f766e"/>
+            <path d="M31 111c1-21 13-32 33-32s32 11 33 32c-8 8-19 12-33 12s-25-4-33-12Z" fill="#0f766e"/>
+            <circle cx="136" cy="53" r="18" fill="#ef785c"/>
+            <path d="M103 111c1-21 13-32 33-32s32 11 33 32c-8 8-19 12-33 12s-25-4-33-12Z" fill="#ef785c"/>
+            <circle cx="100" cy="151" r="18" fill="#527ac2"/>
+            <path d="M67 190c1-21 13-32 33-32s32 11 33 32" fill="#527ac2"/>
+          </svg><text x="230" y="94" fill="#173b36" font-family="Avenir Next, Avenir, Trebuchet MS, sans-serif" font-size="72" font-weight="800" letter-spacing="-3.5">connec<tspan fill="#0f766e">ta</tspan></text><text x="234" y="133" fill="#647a70" font-family="Avenir Next, Avenir, Trebuchet MS, sans-serif" font-size="20">Meet · Link · Grow</text></svg>

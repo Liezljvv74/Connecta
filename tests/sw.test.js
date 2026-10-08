@@ -8,9 +8,9 @@ const root = new URL('../', import.meta.url);
 const sw = readFileSync(new URL('sw.js', root), 'utf8');
 const start = sw.indexOf('const FILES = [');
 const listed = [...sw.slice(start, sw.indexOf('];', start)).matchAll(/'([^']+)'/g)].map(m => m[1]).filter(f => f !== './');
-const DIRS = ['css', 'js', 'js/core', 'js/screens', 'vendor', 'icons'];
+const DIRS = ['css', 'js', 'js/core', 'js/screens', 'vendor', 'icons', 'Public'];
 const onDisk = ['index.html', 'manifest.webmanifest',
-  ...DIRS.flatMap(dir => readdirSync(new URL(`${dir}/`, root)).filter(n => /\.(js|css|png)$/.test(n)).map(n => `${dir}/${n}`))];
+  ...DIRS.flatMap(dir => readdirSync(new URL(`${dir}/`, root)).filter(n => /\.(js|css|png|svg)$/.test(n)).map(n => `${dir}/${n}`))];
 
 test('every app file is cached for offline use', () => {
   for (const f of onDisk) assert.ok(listed.includes(f), `${f} is missing from sw.js FILES`);

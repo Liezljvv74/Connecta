@@ -1,8 +1,8 @@
 // Offline support: caches every app file.
 // VERSION matches js/version.js. BUILD is a fingerprint of the app files, written by `npm run stamp`;
 // any code change alters it, so phones always pick up the new files (a test checks it is current).
-const VERSION = 'connecta-1.0.1';
-const BUILD = '28d3ed3b5d53';
+const VERSION = 'connecta-1.0.2';
+const BUILD = '106cea2e63ea';
 const CACHE = `${VERSION}-${BUILD}`;
 const FILES = [
   './',
@@ -35,6 +35,7 @@ const FILES = [
   'icons/icon-180.png',
   'icons/icon-192.png',
   'icons/icon-512.png',
+  'Public/connecta-full-logo.svg',
 ];
 
 self.addEventListener('install', e => {
