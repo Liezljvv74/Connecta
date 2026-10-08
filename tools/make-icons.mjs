@@ -1,15 +1,17 @@
-// Generates the app icons (teal square, white card, three QR-style corner marks). Run: node tools/make-icons.mjs
+// Generates the app icons (light-blue square, white card, three dark-blue QR-style corner marks).
+// Run: node tools/make-icons.mjs
 import { deflateSync, crc32 } from 'node:zlib';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
-const TEAL = [15, 118, 110];
+const LIGHT_BLUE = [151, 175, 218]; // #97AFDA, logo blue 40% lighter
+const DARK_BLUE = [49, 73, 116]; // #314974, logo blue 40% darker
 const WHITE = [255, 255, 255];
 
 function pixel(x, y) {
-  if (x < 0.18 || x > 0.82 || y < 0.18 || y > 0.82) return TEAL;
+  if (x < 0.18 || x > 0.82 || y < 0.18 || y > 0.82) return LIGHT_BLUE;
   for (const [cx, cy] of [[0.36, 0.36], [0.64, 0.36], [0.36, 0.64]]) {
     const m = Math.max(Math.abs(x - cx), Math.abs(y - cy));
-    if (m < 0.035 || (m > 0.065 && m < 0.1)) return TEAL;
+    if (m < 0.035 || (m > 0.065 && m < 0.1)) return DARK_BLUE;
   }
   return WHITE;
 }
