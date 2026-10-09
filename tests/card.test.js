@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { effectiveValue, availableFields, buildCard, pickBusiness, sortedBusinesses, longestFields } from '../js/core/card.js';
+import { effectiveValue, availableFields, buildCard, pickBusiness, sortedBusinesses, longestFields, PERSONAL_CARD } from '../js/core/card.js';
 
 const me = {
   firstName: 'Jane', lastName: 'Doe', photo: 'data:image/jpeg;base64,AAA',
@@ -62,4 +62,12 @@ test('sortedBusinesses does not change the original list', () => {
 
 test('longestFields names the longest shared fields', () => {
   assert.deepEqual(longestFields({ title: 'CEO', address: 'A very long street address 123', email: 'a@b.co' }), ['Address', 'Email']);
+});
+
+test('a personal card (no business) shares the personal details with no business name', async () => {
+  const { buildVCard } = await import('../js/core/vcard.js');
+  const card = buildCard(me, PERSONAL_CARD);
+  assert.equal(card.mobile, '082 123 4567');
+  assert.equal(card.email, 'jane@home.com');
+  assert.ok(!buildVCard(card).includes('ORG:'));
 });

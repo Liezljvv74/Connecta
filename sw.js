@@ -1,8 +1,8 @@
 // Offline support: caches every app file.
 // VERSION matches js/version.js. BUILD is a fingerprint of the app files, written by `npm run stamp`;
 // any code change alters it, so phones always pick up the new files (a test checks it is current).
-const VERSION = 'connecta-1.0.4';
-const BUILD = '717dfe1871ab';
+const VERSION = 'connecta-1.0.5';
+const BUILD = '0f0b3338c7a4';
 const CACHE = `${VERSION}-${BUILD}`;
 const FILES = [
   './',

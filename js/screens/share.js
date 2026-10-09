@@ -1,5 +1,5 @@
 // Share (home): pick a business, show the QR code, switch fields off for this person, send the card (spec §3.1, §4).
-import { buildCard, availableFields, pickBusiness, sortedBusinesses, longestFields } from '../core/card.js';
+import { buildCard, availableFields, pickBusiness, sortedBusinesses, longestFields, PERSONAL_CARD } from '../core/card.js';
 import { buildVCard, plainText } from '../core/vcard.js';
 import { qrSvg, fitsQr } from '../core/qr.js';
 import { makeFile, canShareFiles, shareFile, downloadFile, shareText, emailText, safeFileName } from '../core/share.js';
@@ -10,19 +10,18 @@ export function render(root, ctx) {
   const named = sortedBusinesses(businesses).filter(b => b.name);
   const hasName = !!(me.firstName || me.lastName);
 
-  if (!hasName || !named.length) {
+  if (!hasName) {
     root.innerHTML = `
       <section class="card">
         <h2>Let's set up your card</h2>
-        <p>${hasName ? '✓ Your details are ready.' : '1. Add your name and contact details.'}</p>
-        <p>${named.length ? '✓ Your business is ready.' : `${hasName ? '1' : '2'}. Add a business with its name and logo.`}</p>
+        <p>Add your name and contact details. A business with its own name and logo is optional.</p>
         <button type="button" class="primary" data-act="setup">Go to Profile</button>
       </section>`;
     root.querySelector('[data-act=setup]').addEventListener('click', () => ctx.go('profile'));
     return;
   }
 
-  let biz = pickBusiness(named, settings.lastBusinessId);
+  let biz = pickBusiness(named, settings.lastBusinessId) ?? PERSONAL_CARD; // no business: share personal details
   let hidden = new Set(); // per-person switches; reset every time this screen opens
 
   const letScreenDim = keepScreenAwake();
@@ -32,9 +31,9 @@ export function render(root, ctx) {
     const qrText = buildVCard(card);
     const fields = availableFields(me, biz);
     root.innerHTML = `
-      <button type="button" class="biz-switch" data-act="switch" aria-label="Business: ${esc(biz.name)}${named.length > 1 ? '. Tap to change.' : ''}">
+      <button type="button" class="biz-switch" data-act="switch" aria-label="Business: ${esc(biz.name || 'Personal card')}${named.length > 1 ? '. Tap to change.' : ''}">
         ${biz.logo ? `<img class="logo" src="${esc(biz.logo)}" alt="">` : ''}
-        <span>${esc(biz.name)}</span>${named.length > 1 ? '<span aria-hidden="true">▾</span>' : ''}
+        <span>${esc(biz.name || 'Personal card')}</span>${named.length > 1 ? '<span aria-hidden="true">▾</span>' : ''}
       </button>
       <div class="qr-area">
         ${me.photo ? `<img class="photo" src="${esc(me.photo)}" alt="Your photo">` : ''}

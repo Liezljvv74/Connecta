@@ -28,7 +28,10 @@ export function buildCard(me, biz, hidden = new Set()) {
   return card;
 }
 
-export const sortedBusinesses = list => [...list].sort((a, b) => a.order - b.order);
+// Used when no business is set up: just the person's own details, nothing switched off by default.
+export const PERSONAL_CARD = Object.freeze({ id: 'personal', name: '', logo: '', title: '', overrides: {}, defaultFields: SHAREABLE, order: 0 });
+
+export const sortedBusinesses =list => [...list].sort((a, b) => a.order - b.order);
 
 export function pickBusiness(businesses, lastId) {
   return businesses.find(b => b.id === lastId) ?? sortedBusinesses(businesses)[0] ?? null;
