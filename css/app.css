@@ -65,6 +65,7 @@ button:disabled { opacity: .4; }
 .row-actions { display: flex; gap: 8px; margin-top: 6px; }
 .row-actions button { padding: 6px 12px; min-height: 36px; font-size: .85rem; }
 .camera video { width: 100%; border-radius: 14px; background: #000; }
+#card .camera video { height: 45vh; object-fit: cover; } /* keeps Take photo on screen */
 dialog { border: 0; border-radius: 16px; padding: 0; width: min(92vw, 420px); background: var(--card); color: var(--ink); }
 dialog::backdrop { background: rgba(0, 0, 0, .45); }
 .dialog-body { padding: 16px 16px 0; }

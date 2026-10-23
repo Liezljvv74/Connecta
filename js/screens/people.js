@@ -50,6 +50,11 @@ function renderForm(root, ctx, person, isNew) {
       await ctx.save('people');
       if (person.event) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');
+      // The phone's contacts can't be written by a web app; this opens its "new contact" screen, filled in.
+      if (isNew && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
+        [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
+        await shareFile(makeFile(personVCard(person), `${safeFileName(person.name)}.vcf`, 'text/vcard'), person.name);
+      }
       ctx.go('people');
     }
     if (act === 'delete' && await confirmDialog(`Delete ${person.name}?`, 'Delete', true)) {

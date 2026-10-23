@@ -38,6 +38,7 @@ Uses Node's built-in test runner (Node 22+). There is nothing to install.
 | qrcode-generator | 1.4.4 | Drawing the QR code |
 | qr-scanner | 1.4.2 | Reading QR codes with the camera |
 | SheetJS xlsx (mini) | 0.20.3 | Excel export (loaded only when exporting) |
+| Tesseract.js (+ core 6.0.0, English `best_int` data) | 6.0.1 | Reading paper business cards (`vendor/tesseract/`, ~7 MB, downloaded on first use; if you replace these files, rename `OCR_CACHE` in `sw.js`) |
 
 ## Changing the support email
 
