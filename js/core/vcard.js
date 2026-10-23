@@ -63,16 +63,6 @@ export function personVCard(p) {
   });
 }
 
-// Opens Android's own "new contact" screen, filled in (Chrome on Android won't hand a .vcf file to other apps).
-// The extras are Android's ContactsContract.Intents.Insert names; it has no website field, so that goes in the notes.
-export function contactIntent(p) {
-  const notes = [p.website, p.event && `Met at: ${p.event}`, p.notes, p.extra].filter(Boolean).join('\n');
-  const extras = { name: p.name, company: p.company, phone: p.phone, email: p.email, notes };
-  return 'intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;'
-    + Object.entries(extras).filter(([, v]) => v).map(([k, v]) => `S.${k}=${encodeURIComponent(v)};`).join('')
-    + 'end';
-}
-
 // ---- Reading scanned cards ----
 
 const unesc = v => v.replace(/\\n/gi, '\n').replace(/\\([,;:\\])/g, '$1');
