@@ -38,18 +38,25 @@ function renderForm(root, ctx, person, isNew) {
       ${isNew ? '' : '<button type="button" class="danger" data-act="delete">Delete</button>'}
     </div>`;
   if (isNew) root.querySelector('[name=name]').focus();
+  let saving = false; // a double tap on Save saves, and asks about contacts, only once
 
   root.addEventListener('click', async e => {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'cancel') ctx.go('people');
-    if (act === 'save') {
+    if (act === 'save' && !saving) {
       const data = Object.fromEntries(new FormData(root.querySelector('#person')));
       if (!data.name.trim()) { toast('Add at least a name.'); return; }
+      saving = true;
       for (const [key, value] of Object.entries(data)) person[key] = value.trim();
-      if (isNew && !ctx.state.people.includes(person)) ctx.state.people.push(person); // double tap logs once
+      if (isNew) ctx.state.people.push(person);
       await ctx.save('people');
       if (person.event) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');
+      // The phone's contacts can't be written by a web app; this opens its "new contact" screen, filled in.
+      if (isNew && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
+        [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
+        await shareFile(makeFile(personVCard(person), `${safeFileName(person.name)}.vcf`, 'text/vcard'), person.name);
+      }
       ctx.go('people');
     }
     if (act === 'delete' && await confirmDialog(`Delete ${person.name}?`, 'Delete', true)) {
