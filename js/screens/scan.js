@@ -3,7 +3,7 @@ import QrScanner from '../../vendor/qr-scanner.min.js';
 import { parseScanned } from '../core/vcard.js';
 import { parseCardText } from '../core/cardtext.js';
 import { saveContact } from '../core/share.js';
-import { readCard } from '../core/ocr.js';
+import { readCard, warmUpCardReading, releaseCardReading } from '../core/ocr.js';
 import { esc, pickFile } from '../ui.js';
 
 const CAMERA_HELP = `
@@ -86,6 +86,7 @@ export function render(root, ctx) {
       stopCardCamera();
       startQr();
     } else {
+      warmUpCardReading(); // ready by the time the card is in front of the camera
       // The QR scanner otherwise holds the camera for another 300 ms; opening it twice gives a black picture on Android.
       scanner.pause(true).then(() => { if (mode === 'card') startCardCamera(); });
     }
@@ -161,5 +162,5 @@ export function render(root, ctx) {
   });
 
   setMode('qr');
-  return () => { left = true; scanner.destroy(); stopCardCamera(); };
+  return () => { left = true; scanner.destroy(); stopCardCamera(); releaseCardReading(); };
 }
