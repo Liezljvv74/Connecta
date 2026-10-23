@@ -3,6 +3,7 @@ import { newPerson, isoDate } from '../core/model.js';
 import { followUpIcs } from '../core/ics.js';
 import { exportRows, eventsIn, toCsv, toXlsx, exportFileName } from '../core/export.js';
 import { makeFile, shareFile, safeFileName, saveContact } from '../core/share.js';
+import { currentPlace } from '../core/place.js';
 import { esc, dialog, confirmDialog, toast, loadScript } from '../ui.js';
 
 const XLSX_SRC = 'vendor/xlsx.mini.min.js';
@@ -10,12 +11,12 @@ const XLSX_TYPE = 'application/vnd.openxmlformats-officedocument.spreadsheetml.s
 
 const FORM_FIELDS = [
   ['name', 'Name', 'text'], ['company', 'Company', 'text'], ['phone', 'Phone', 'tel'], ['email', 'Email', 'email'],
-  ['website', 'Website', 'url'], ['event', 'Event', 'text'], ['notes', 'Notes: what you talked about', 'textarea'],
+  ['website', 'Website', 'url'], ['event', 'Event', 'text'], ['metDate', 'Date met', 'date'], ['notes', 'Notes: what you talked about', 'textarea'],
   ['followUpDate', 'Follow-up date', 'date'], ['extra', 'Other details', 'textarea'],
 ];
 
 export function render(root, ctx, params) {
-  if (params?.log) return renderForm(root, ctx, newPerson({ event: ctx.state.settings.lastEvent, ...params.log }), true);
+  if (params?.log) return renderForm(root, ctx, newPerson(params.log), true);
   const existing = params?.edit && ctx.state.people.find(p => p.id === params.edit);
   if (existing) return renderForm(root, ctx, existing, false);
   renderList(root, ctx);
@@ -29,7 +30,7 @@ function renderForm(root, ctx, person, isNew) {
       ${person.sharedBusinessName ? `<p class="hint">You gave them your ${esc(person.sharedBusinessName)} card.</p>` : ''}
       ${FORM_FIELDS.map(([key, label, type]) => type === 'textarea'
         ? `<label>${esc(label)}<textarea name="${key}" rows="3">${esc(person[key])}</textarea></label>`
-        : `<label>${esc(label)}<input name="${key}" type="${type}" value="${esc(person[key])}"${key === 'event' ? ' list="events"' : ''}></label>`).join('')}
+        : `<label>${esc(label)}<input name="${key}" type="${type}" value="${esc(key === 'metDate' ? isoDate(new Date(person.metAt)) : person[key])}"${key === 'event' ? ' list="events"' : ''}></label>`).join('')}
       <datalist id="events">${eventsIn(ctx.state.people).map(ev => `<option value="${esc(ev)}">`).join('')}</datalist>
     </form>
     <div class="actions">
@@ -37,6 +38,8 @@ function renderForm(root, ctx, person, isNew) {
       ${isNew ? '' : '<button type="button" class="danger" data-act="delete">Delete</button>'}
     </div>`;
   if (isNew) root.querySelector('[name=name]').focus();
+  let autoPlace = ''; // the place name Connecta filled in, so it isn't remembered as a typed event
+  if (isNew && !person.event) fillEvent(root.querySelector('[name=event]'), ctx.state.settings.lastEvent).then(p => { autoPlace = p; });
   let saving = false; // a double tap on Save saves, and asks about contacts, only once
 
   root.addEventListener('click', async e => {
@@ -46,12 +49,14 @@ function renderForm(root, ctx, person, isNew) {
       const data = Object.fromEntries(new FormData(root.querySelector('#person')));
       if (!data.name.trim()) { toast('Add at least a name.'); return; }
       saving = true;
-      for (const [key, value] of Object.entries(data)) person[key] = value.trim();
+      const { metDate, ...fields } = data;
+      for (const [key, value] of Object.entries(fields)) person[key] = value.trim();
+      if (metDate && metDate !== isoDate(new Date(person.metAt))) person.metAt = new Date(`${metDate}T12:00`).toISOString();
       if (isNew) ctx.state.people.push(person);
       await ctx.save('people');
-      if (person.event) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
+      if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');
-      // A web app can't write contacts; this opens the phone's "new contact" screen, filled in.
+      // A web app can't write contacts itself; saveContact hands the phone a contact file.
       if (isNew && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
         [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
         await saveContact(person);
@@ -64,6 +69,17 @@ function renderForm(root, ctx, person, isNew) {
       ctx.go('people');
     }
   });
+}
+
+// Event = where you are now (editable); without a place (location refused, no signal…) the last typed event.
+// Anything typed while the place is being looked up wins. Returns the place name it filled in.
+async function fillEvent(input, lastEvent) {
+  input.placeholder = 'Finding where you are…';
+  const place = await currentPlace();
+  input.placeholder = 'Event or place';
+  if (input.value || !input.isConnected) return '';
+  input.value = place || lastEvent || '';
+  return place;
 }
 
 function renderList(root, ctx) {

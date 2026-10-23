@@ -14,6 +14,7 @@ export function render(root, ctx) {
       <summary>Privacy</summary>
       <p>Everything you enter (your details, logos, photo and the people you meet) is stored <strong>only on this phone</strong>.</p>
       <p>Nothing is sent anywhere unless you share a card, export a list or make a backup yourself. There are no accounts, no tracking and no analytics.</p>
+      <p><strong>One exception, the place name:</strong> Connecta fills in <strong>Event</strong> with where you are when you add a person. For this it asks the phone for your location (the phone asks your permission once) when you open the app and when you add a person, and sends only those coordinates to <strong>OpenStreetMap</strong>, a free map service, to get the place name. Nothing else is sent, and nothing about the people you meet. If you don't allow location (or there is no signal), Event shows the last event you typed instead, and you can always change it.</p>
     </details>
 
     <details>
@@ -44,6 +45,26 @@ export function render(root, ctx) {
       <summary>How people receive your card</summary>
       <p><strong>Scanning:</strong> they open their phone's camera (or Google Lens on Android) and point it at your QR code. A banner appears; one tap opens their contacts with your details filled in, and they tap Save. Phones always ask for that one tap, so no app can add contacts secretly.</p>
       <p><strong>Sending:</strong> tap <strong>Send card</strong> to share your contact file, including your photo and logo, by WhatsApp, SMS, email, AirDrop or Bluetooth. If a phone can't attach files, you can download the file or send your details as a text message instead.</p>
+    </details>
+
+    <details>
+      <summary>Saving people to your phone's contacts</summary>
+      <p>After you save someone in People, Connecta asks whether to add them to your phone's contacts too. You can also tap <strong>Save contact</strong> next to anyone in People. Connecta then makes a <strong>contact file</strong> (for example <em>JOHAN SOUTHEY.vcf</em>) with their name, company, phone, email, website and notes. A web app isn't allowed to write to your contacts by itself, so you add the file with a few taps.</p>
+      <p><strong>Android (e.g. Samsung):</strong> the contact file is downloaded.</p>
+      <ol>
+        <li>Tap <strong>Open</strong> on the download message, or tap the <strong>download notification</strong> at the top of the screen. You can also find it later in <strong>My Files → Downloads</strong>.</li>
+        <li>Choose <strong>Contacts</strong> (tap <strong>Just once</strong> or <strong>Always</strong>).</li>
+        <li>If Contacts asks <em>"Allow Contacts to send you notifications?"</em>, tap <strong>Allow</strong>. Samsung uses a notification to finish the import; if you don't allow it, the contact may not be saved. You can switch these notifications off later in Settings → Apps → Contacts → Notifications.</li>
+        <li>Choose where to save (phone, Samsung or Google account) and tap <strong>Save</strong> or <strong>Import</strong>.</li>
+      </ol>
+      <p><strong>Not saved?</strong> Import it from inside Contacts: open <strong>Contacts</strong> → menu <strong>☰</strong> → <strong>Manage contacts</strong> → <strong>Import contacts</strong> → <strong>Internal storage</strong> → <strong>Download</strong> → choose the file → <strong>Import</strong>. On Google Contacts: <strong>Fix &amp; manage</strong> → <strong>Import from file</strong>.</p>
+      <p><strong>iPhone:</strong> the share list opens.</p>
+      <ol>
+        <li>Choose <strong>Contacts</strong> if it is in the list; the contact opens.</li>
+        <li>If Contacts isn't in the list, choose <strong>Save to Files</strong>, then open the <strong>Files</strong> app and tap the contact file.</li>
+        <li>Tap <strong>Create New Contact</strong> (or <strong>Add to Existing Contact</strong>), then <strong>Done</strong>.</li>
+      </ol>
+      <p>Tip: the place where you met (Event) is added to the contact's notes as <em>"Met at: …"</em>.</p>
     </details>
 
     <details>
