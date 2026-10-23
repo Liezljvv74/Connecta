@@ -14,7 +14,7 @@ test('reads a typical card: icons, a big name, a roadside number that is not the
   assert.equal(p.phone, '082 466 0827');
   assert.equal(p.email, 'allenh@out.co.za');
   assert.equal(p.website, 'outsurance.co.za');
-  assert.equal(p.company, 'Outsurance');
+  assert.equal(p.company, 'OUTSURANCE');
   assert.equal(p.extra, 'OUTSURANCE BROKER\nROADSIDE ASSISTANCE: 08 600 80 000\nOUT');
 });
 
@@ -57,4 +57,42 @@ test('a website on the same line as the email is found', () => {
   const p = parseCardText(lines(['Jane Smith', 30], ['jane@acme.co.za | www.acme.co.za', 18]));
   assert.equal(p.website, 'www.acme.co.za');
   assert.equal(p.company, 'Acme');
+});
+
+test('Johan Southey card: the name comes from the email, the company from its domain, icons are cleaned off the phone', () => {
+  const p = parseCardText(lines(
+    ['JOHAN SOUTHEY', 19], ['Partner | Certified Business Coach', 20], ['ActionCOACH Hermanus', 15],
+    ['9 54 Crescent', 19], ['Vermont, Hermanus 7201', 19], ['0 082 496 7019 ActionCOACH', 31], ['action COACH', 60],
+    ['@ johansouthey@actioncoach.com', 20], ['@ johansouthey.actioncoach.com', 21],
+  ));
+  assert.equal(p.name, 'JOHAN SOUTHEY');
+  assert.equal(p.company, 'ActionCOACH Hermanus');
+  assert.equal(p.phone, '082 496 7019');
+  assert.equal(p.email, 'johansouthey@actioncoach.com');
+  assert.equal(p.website, 'johansouthey.actioncoach.com');
+});
+
+test('a dot read after the area code is not kept in the phone number', () => {
+  assert.equal(parseCardText(lines(['Jane Smith', 30], ['082. 496 7019', 18])).phone, '082 496 7019');
+  assert.equal(parseCardText(lines(['Jane Smith', 30], ['Tel 1 800 555 1234', 18])).phone, '1 800 555 1234');
+});
+
+test('a gmail address is not a company', () => {
+  assert.equal(parseCardText(lines(['Jane Smith', 30], ['jane.smith@gmail.com', 18])).company, '');
+});
+
+test('stray icon characters are cleaned off the name and company; the address stays in Other details', () => {
+  const p = parseCardText(lines(['JOHAN SOUTHEY 4', 19], ['ActionCOACH Hermanus -', 15], ['9 54 Stormvoël Crescent', 19],
+    ['johansouthey@actioncoach.com', 20]));
+  assert.equal(p.name, 'JOHAN SOUTHEY');
+  assert.equal(p.company, 'ActionCOACH Hermanus');
+  assert.match(p.extra, /^54 Stormvoël Crescent$/m);
+});
+
+test('icons read at the edges of a line are stripped from Other details, real text is kept', () => {
+  const p = parseCardText(lines(['JOHAN SOUTHEY', 19], ['9 54 Stormvoël Crescent', 19], ['14612 Falkensee j', 19],
+    ['| Tel. 03322 1213996 / Fax 03322 1213997', 19], ['| und nach Vereinbarung ;', 19], ['9 Main Road', 19], ['Suite 4', 19],
+    ['Mo. + Do. 8:30-13:30 Uhr', 19], ['0 082 496 7019 ActionCOACH', 19]));
+  assert.deepEqual(p.extra.split('\n'), ['54 Stormvoël Crescent', '14612 Falkensee', 'Tel. 03322 1213996 / Fax 03322 1213997',
+    'und nach Vereinbarung', '9 Main Road', 'Suite 4', 'Mo. + Do. 8:30-13:30 Uhr', '082 496 7019 ActionCOACH']);
 });

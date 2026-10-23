@@ -1,9 +1,8 @@
 // People I met: quick log, search, follow-up reminders, save to contacts, export (spec §3.4).
 import { newPerson, isoDate } from '../core/model.js';
-import { personVCard } from '../core/vcard.js';
 import { followUpIcs } from '../core/ics.js';
 import { exportRows, eventsIn, toCsv, toXlsx, exportFileName } from '../core/export.js';
-import { makeFile, shareFile, safeFileName } from '../core/share.js';
+import { makeFile, shareFile, safeFileName, saveContact } from '../core/share.js';
 import { esc, dialog, confirmDialog, toast, loadScript } from '../ui.js';
 
 const XLSX_SRC = 'vendor/xlsx.mini.min.js';
@@ -52,10 +51,10 @@ function renderForm(root, ctx, person, isNew) {
       await ctx.save('people');
       if (person.event) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');
-      // The phone's contacts can't be written by a web app; this opens its "new contact" screen, filled in.
+      // A web app can't write contacts; this opens the phone's "new contact" screen, filled in.
       if (isNew && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
         [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
-        await shareFile(makeFile(personVCard(person), `${safeFileName(person.name)}.vcf`, 'text/vcard'), person.name);
+        await saveContact(person);
       }
       ctx.go('people');
     }
@@ -120,7 +119,7 @@ function renderList(root, ctx) {
         shareFile(makeFile(followUpIcs(p), `follow-up-${safeFileName(p.name)}.ics`, 'text/calendar'), `Follow up: ${p.name}`);
         break;
       case 'contact':
-        shareFile(makeFile(personVCard(p), `${safeFileName(p.name)}.vcf`, 'text/vcard'), p.name);
+        saveContact(p);
         break;
       case 'export':
         if (!people.length) { toast('Log someone first, then you can export.'); break; }

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildVCard, plainText, personVCard } from '../js/core/vcard.js';
+import { buildVCard, plainText, personVCard, contactIntent } from '../js/core/vcard.js';
 
 const card = {
   firstName: 'Zoë', lastName: 'Müller', org: 'Acme, Inc; Ltd', title: 'Owner',
@@ -56,4 +56,16 @@ test('personVCard turns a logged person into a contact with notes', () => {
   });
   for (const line of ['N:van der Merwe;Jane;;;', 'ORG:Beta', 'TEL;TYPE=CELL:083', 'EMAIL;TYPE=INTERNET:j@b.com',
     'NOTE:Met at: Expo\\nWants a quote\\nTitle: CFO']) assert.ok(v.includes(line + '\r\n'), line);
+});
+
+test('contactIntent opens Android\'s new-contact screen with the details filled in', () => {
+  const url = contactIntent({ name: 'Johan Southey', company: 'ActionCOACH; Hermanus', phone: '082 496 7019',
+    email: 'johansouthey@actioncoach.com', website: 'johansouthey.actioncoach.com', event: 'Expo', notes: '', extra: '' });
+  assert.ok(url.startsWith('intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.dir/raw_contact;'));
+  assert.ok(url.endsWith(';end'));
+  assert.ok(url.includes('S.name=Johan%20Southey;'));
+  assert.ok(url.includes('S.company=ActionCOACH%3B%20Hermanus;'), 'a ; in a value must not end it early');
+  assert.ok(url.includes('S.phone=082%20496%207019;'));
+  assert.ok(url.includes('S.notes=johansouthey.actioncoach.com%0AMet%20at%3A%20Expo;'));
+  assert.ok(!url.includes('S.email=;'));
 });

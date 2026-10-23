@@ -36,7 +36,7 @@ export function render(root, ctx) {
       <p><strong>iPhone:</strong> open the Connecta link in <strong>Safari</strong> (other browsers can't install it), tap the Share button, then <strong>Add to Home Screen</strong>.</p>
       <p><strong>Android:</strong> open the link in <strong>Chrome</strong>, tap the menu (⋮), then <strong>Install app</strong> or <strong>Add to Home screen</strong>.</p>
       <p>Once installed, Connecta works without internet.</p>
-      <p><strong>Reading paper business cards</strong> needs an extra download of about 7 MB, once. Connecta does this by itself in the background the first time you open it on Wi-Fi. On iPhone it can't tell Wi-Fi from mobile data, so it may use mobile data. If it hasn't happened yet when you first scan a paper card, it downloads then, on Wi-Fi or mobile data. After that, card reading works without internet too.</p>
+      <p><strong>Reading paper business cards</strong> needs an extra download of about 10 MB, once. Connecta does this by itself in the background the first time you open it on Wi-Fi. On iPhone it can't tell Wi-Fi from mobile data, so it may use mobile data. If it hasn't happened yet when you first scan a paper card, it downloads then, on Wi-Fi or mobile data. After that, card reading works without internet too.</p>
       <p>Tip: after installing, open Connecta once on Wi-Fi and leave it open for a minute.</p>
     </details>
 

@@ -1,4 +1,5 @@
 // Getting files and text off the phone: share sheet first, download or SMS/email as fallback (spec §4.2).
+import { personVCard, contactIntent } from './vcard.js';
 
 export const makeFile = (content, filename, type) => new File([content], filename, { type });
 
@@ -27,6 +28,16 @@ export async function shareFile(file, title = '') {
   }
   downloadFile(file);
   return 'downloaded';
+}
+
+// Puts a person from People / Scan into the phone's contacts: Android opens its "new contact" screen,
+// other phones get the contact file (iPhone shows it with "Create New Contact").
+export function saveContact(p, nav = navigator, loc = location) {
+  if (/Android/i.test(nav.userAgent)) {
+    loc.href = contactIntent(p);
+    return Promise.resolve('opened');
+  }
+  return shareFile(makeFile(personVCard(p), `${safeFileName(p.name)}.vcf`, 'text/vcard'), p.name);
 }
 
 export async function shareText(text, title = '') {
