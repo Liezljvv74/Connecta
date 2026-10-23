@@ -66,13 +66,17 @@ async function start() {
   show();
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.register('sw.js');
+    const registration = navigator.serviceWorker.register('sw.js');
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!hadController) return; // first install: nothing to refresh
       updated = true;
       reloadIfUpdated();
     });
     document.addEventListener('visibilitychange', reloadIfUpdated);
+    // Phones resume an installed app without reloading it, so also look for a new version on every return.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') registration.then(r => r.update()).catch(() => {});
+    });
     setTimeout(() => import('./core/ocr.js').then(m => m.prepareCardReading()).catch(() => {}), 5000);
   }
 }
