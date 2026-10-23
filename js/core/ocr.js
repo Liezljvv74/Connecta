@@ -1,13 +1,15 @@
 // Reads the text on a photo of a paper business card, on the phone (Tesseract).
-// Its ~7 MB of files download in the background or on first use; sw.js keeps them for offline.
+// Its ~10 MB of files download in the background or on first use; sw.js keeps them for offline.
 import { loadScript } from '../ui.js';
 
 const OCR_DIR = new URL('vendor/tesseract/', location.href).href;
+// English, Afrikaans and German: together they know ë, é, ä, ö, ü… ("Stormvoël", "Augenärztin").
+const LANGS = ['eng', 'afr', 'deu'];
 let ocrWorker = null;
 
 function getOcrWorker() {
   ocrWorker ??= loadScript(`${OCR_DIR}tesseract.min.js`)
-    .then(() => self.Tesseract.createWorker('eng', 1, {
+    .then(() => self.Tesseract.createWorker(LANGS.join('+'), 1, {
       workerPath: `${OCR_DIR}worker.min.js`, corePath: OCR_DIR, langPath: OCR_DIR,
       workerBlobURL: false, cacheMethod: 'none', // a plain worker URL lets sw.js serve the files offline
     }))
@@ -20,7 +22,8 @@ function getOcrWorker() {
 // The reader it starts is kept, so a card scan straight after uses it instead of downloading again.
 export async function prepareCardReading(nav = navigator) {
   if (nav.connection?.type === 'cellular' || nav.connection?.saveData || !nav.serviceWorker?.controller) return;
-  if (await caches.match(`${OCR_DIR}eng.traineddata.gz`)) return; // loaded last, so present = all done
+  const cached = await Promise.all(LANGS.map(l => caches.match(`${OCR_DIR}${l}.traineddata.gz`)));
+  if (cached.every(Boolean)) return; // the language files load last, so present = all done
   await getOcrWorker();
 }
 
@@ -35,7 +38,7 @@ export async function readCard(source) {
   });
   try {
     const worker = await getOcrWorker().catch(() => {
-      throw new Error('Card reading needs internet the first time, to download about 7 MB. Try again when you are online.');
+      throw new Error('Card reading needs internet the first time, to download about 10 MB. Try again when you are online.');
     });
     try {
       const fit = size => Math.min(1, size / Math.max(img.width, img.height));
@@ -46,9 +49,8 @@ export async function readCard(source) {
         if (data.confidence >= 70) break;
       }
       const { data } = await worker.recognize(rotated(img, fit(1600), best.angle), {}, { blocks: true });
-      // Unsure words are mostly smudges, icons and the background (e.g. lined paper): leave them out.
       return (data.blocks ?? []).flatMap(b => b.paragraphs).flatMap(p => p.lines)
-        .map(l => l.words.filter(w => w.confidence >= 60))
+        .map(l => l.words.filter(keepWord))
         .filter(words => words.length)
         .map(words => ({ text: words.map(w => w.text).join(' '), height: Math.max(...words.map(w => w.bbox.y1 - w.bbox.y0)) }));
     } catch {
@@ -57,6 +59,14 @@ export async function readCard(source) {
   } finally {
     img.close(); // a full photo is tens of MB once decoded
   }
+}
+
+// Unsure short scraps are smudges, icons and the background (e.g. lined paper: "ea", "IRE", "BRASS"): leave them out.
+// A longer word is kept even when unsure, so an unusual letter never makes a word disappear ("Stormvoël").
+function keepWord(w) {
+  if (w.confidence >= 60) return true;
+  const letters = w.text.replace(/[^\p{L}]/gu, '').length;
+  return letters >= 6 && letters >= w.text.length * 0.8;
 }
 
 function rotated(img, scale, angle) {

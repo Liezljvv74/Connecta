@@ -1,8 +1,8 @@
 // Scan someone else's QR business card (spec §3.5), or read a paper business card from a photo, into People I met.
 import QrScanner from '../../vendor/qr-scanner.min.js';
-import { parseScanned, personVCard } from '../core/vcard.js';
+import { parseScanned } from '../core/vcard.js';
 import { parseCardText } from '../core/cardtext.js';
-import { makeFile, shareFile, safeFileName } from '../core/share.js';
+import { saveContact } from '../core/share.js';
 import { readCard } from '../core/ocr.js';
 import { esc, pickFile } from '../ui.js';
 
@@ -82,8 +82,13 @@ export function render(root, ctx) {
     root.querySelector('#card').hidden = mode !== 'card';
     current = null;
     result.innerHTML = '';
-    if (mode === 'qr') stopCardCamera(); else scanner.stop();
-    start();
+    if (mode === 'qr') {
+      stopCardCamera();
+      startQr();
+    } else {
+      // The QR scanner otherwise holds the camera for another 300 ms; opening it twice gives a black picture on Android.
+      scanner.pause(true).then(() => { if (mode === 'card') startCardCamera(); });
+    }
   }
 
   function found(text) {
@@ -108,6 +113,12 @@ export function render(root, ctx) {
         <button type="button" class="link" data-act="again">Scan again</button></div>`;
   }
 
+  // Messages go under the camera; scroll them into view so they're seen on a small screen.
+  function showHint(text) {
+    result.innerHTML = `<p class="hint">${esc(text)}</p>`;
+    result.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }
+
   // source: the live camera (its current frame) or a chosen photo file.
   async function readPhoto(source) {
     if (!source || reading) return;
@@ -115,17 +126,17 @@ export function render(root, ctx) {
     cardVideo.pause(); // freeze the picture that is being read
     photoButton.disabled = true;
     photoButton.textContent = 'Reading the card…';
-    result.innerHTML = '<p class="hint">Reading the card… this takes a few seconds (longer the first time).</p>';
+    showHint('Reading the card… this takes a few seconds (longer the first time).');
     try {
       const person = parseCardText(await readCard(source));
       if (left) return;
       if (!person.name && !person.phone && !person.email) {
-        result.innerHTML = '<p class="hint">No details found. Try again in good light, with the card filling the photo.</p>';
+        showHint('No details found. Try again in good light, with the card filling the photo.');
         return;
       }
       ctx.go('people', { log: { ...person, source: 'card' } });
     } catch (err) {
-      result.innerHTML = `<p class="hint">${esc(err.message)}</p>`;
+      showHint(err.message);
     } finally {
       reading = false;
       if (left) return;
@@ -139,11 +150,14 @@ export function render(root, ctx) {
     const act = e.target.closest('[data-act]')?.dataset.act;
     if (act === 'mode-qr') setMode('qr');
     if (act === 'mode-card') setMode('card');
-    if (act === 'photo' && cardStream) readPhoto(cardVideo);
+    if (act === 'photo') {
+      if (cardVideo.readyState >= 2) readPhoto(cardVideo); // 2 = the camera is showing a picture
+      else showHint('The camera is not showing a picture yet. Wait a moment and tap Take photo again. If it stays black, tap QR code, then Business card.');
+    }
     if (act === 'pick') pickFile('image/*').then(readPhoto);
     if (act === 'again') { current = null; result.innerHTML = ''; start(); }
     if (act === 'log') ctx.go('people', { log: { ...current, source: 'scanned' } });
-    if (act === 'contact') shareFile(makeFile(personVCard(current), `${safeFileName(current.name)}.vcf`, 'text/vcard'), current.name);
+    if (act === 'contact') saveContact(current);
   });
 
   setMode('qr');
