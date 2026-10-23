@@ -35,17 +35,21 @@ export async function shareFile(file, title = '') {
 // Puts people from People / Scan into the phone's contacts, as ONE contact file (imported in one go).
 // iPhone gets the share list; Android's Chrome can only download it (and won't open Contacts for a web page).
 // The step-by-step help is in About → "Saving people to your phone's contacts".
+// Connecta can't see whether the file was imported, so it asks; returns true only when the user says it was.
 export async function saveContacts(people) {
   const one = people.length === 1;
+  const who = one ? esc(people[0].name) : `${people.length} people`;
   const fileName = one ? `${safeFileName(people[0].name)}.vcf` : `Connecta contacts ${isoDate()} (${people.length}).vcf`;
-  const result = await shareFile(makeFile(people.map(personVCard).join(''), fileName, 'text/vcard'), one ? people[0].name : 'Contacts');
-  if (result === 'downloaded') {
-    await dialog(`
-      <p><strong>${esc(fileName)}</strong> has been downloaded and can now be imported into your contacts${one ? '' : ` (${people.length} people in one go)`}.</p>
-      <p class="hint">How: tap ⓘ (top right) → Saving people to your phone's contacts.</p>`,
-    [{ label: 'OK', primary: true }]);
-  }
-  return result;
+  const result = await shareFile(makeFile(people.map(personVCard).join(''), fileName, 'text/vcard'),
+    one ? people[0].name : `${people.length} contacts`);
+  if (result === 'cancelled') return false;
+  const { value } = await dialog(result === 'downloaded'
+    ? `<p><strong>${esc(fileName)}</strong> has been downloaded${one ? '' : ` (${people.length} people in one file)`}. Import it into your contacts, then come back and tap <strong>Done</strong>.</p>
+      <p class="hint">How: tap ⓘ (top right) → Saving people to your phone's contacts.</p>`
+    : `<p>Did ${who} go into your phone's contacts?</p>`,
+  [{ label: result === 'downloaded' ? 'Done' : 'Yes', value: true, primary: true },
+    { label: 'Not yet', value: false }]);
+  return value === true;
 }
 
 export async function shareText(text, title = '') {

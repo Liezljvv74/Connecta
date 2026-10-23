@@ -15,6 +15,12 @@ const FORM_FIELDS = [
   ['followUpDate', 'Follow-up date', 'date'], ['extra', 'Other details', 'textarea'],
 ];
 
+// The newest first, and the grey line under a name: used by the list and by "Add to my contacts".
+const byNewest = (a, b) => (b.metAt || '').localeCompare(a.metAt || '');
+const summary = p => [p.company, p.event, p.metAt && isoDate(new Date(p.metAt))].filter(Boolean).join(' · ');
+// What goes into the phone's contact: changing any of these means the saved contact is out of date.
+const CONTACT_FIELDS = ['name', 'company', 'phone', 'email', 'website'];
+
 export function render(root, ctx, params) {
   if (params?.log) return renderForm(root, ctx, newPerson(params.log), true);
   const existing = params?.edit && ctx.state.people.find(p => p.id === params.edit);
@@ -50,6 +56,7 @@ function renderForm(root, ctx, person, isNew) {
       if (!data.name.trim()) { toast('Add at least a name.'); return; }
       saving = true;
       const { metDate, ...fields } = data;
+      if (CONTACT_FIELDS.some(k => (fields[k] ?? '').trim() !== (person[k] ?? ''))) delete person.savedToContacts;
       for (const [key, value] of Object.entries(fields)) person[key] = value.trim();
       if (metDate && metDate !== isoDate(new Date(person.metAt))) person.metAt = new Date(`${metDate}T12:00`).toISOString();
       if (isNew) ctx.state.people.push(person);
@@ -57,7 +64,7 @@ function renderForm(root, ctx, person, isNew) {
       if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');
       // A web app can't write contacts itself; this hands the phone a contact file.
-      if (isNew && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
+      if (isNew && !person.savedToContacts && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
         [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
         await saveToContacts(ctx, [person]);
       }
@@ -71,9 +78,10 @@ function renderForm(root, ctx, person, isNew) {
   });
 }
 
-// Makes one contact file for these people and remembers the date, so they aren't ticked again next time.
+// Makes one contact file for these people; once the user says it's imported, remembers the date
+// so they aren't ticked again next time.
 async function saveToContacts(ctx, list) {
-  if (await saveContacts(list) === 'cancelled') return;
+  if (!await saveContacts(list)) return;
   const today = isoDate();
   for (const p of list) p.savedToContacts = today;
   await ctx.save('people');
@@ -105,7 +113,7 @@ function renderList(root, ctx) {
   const draw = query => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
     const shown = [...people]
-      .sort((a, b) => (b.metAt || '').localeCompare(a.metAt || ''))
+      .sort(byNewest)
       .filter(p => {
         const text = [p.name, p.company, p.event, p.notes].join(' ').toLowerCase();
         return words.every(w => text.includes(w));
@@ -115,7 +123,7 @@ function renderList(root, ctx) {
         <li class="person">
           <button type="button" class="link" data-act="edit" data-id="${p.id}">
             <strong>${esc(p.name)}</strong>
-            <small>${esc([p.company, p.event, p.metAt && isoDate(new Date(p.metAt))].filter(Boolean).join(' · '))}</small>
+            <small>${esc(summary(p))}</small>
             ${p.followUpDate ? `<small class="due">Follow up ${esc(p.followUpDate)}</small>` : ''}
             ${p.savedToContacts ? `<small>✓ Saved to contacts ${esc(p.savedToContacts)}</small>` : ''}
           </button>
@@ -164,8 +172,8 @@ function renderList(root, ctx) {
 
 // Pick who goes into one contact file: everyone, no one, or only people not saved to contacts yet.
 async function contactsDialog(ctx, people) {
-  const sorted = [...people].sort((a, b) => (b.metAt || '').localeCompare(a.metAt || ''));
-  const pending = dialog(`
+  let boxes = [];
+  const { value } = await dialog(`
     <h2>Add to my contacts</h2>
     <p class="hint">Tick who to add. They go into one contact file that you import once.</p>
     <div class="pick-quick">Tick:
@@ -173,37 +181,36 @@ async function contactsDialog(ctx, people) {
       <button type="button" class="link" data-pick="none">None</button>
       <button type="button" class="link" data-pick="new">Not saved yet</button>
     </div>
-    <div class="pick-list">${sorted.map(p => `
+    <div class="pick-list">${[...people].sort(byNewest).map(p => `
       <label class="check"><input type="checkbox" name="pick" value="${p.id}"${p.savedToContacts ? '' : ' checked'}>
         <span><strong>${esc(p.name)}</strong>
-          <small>${esc([p.company, p.event, p.metAt && isoDate(new Date(p.metAt))].filter(Boolean).join(' · '))}</small>
+          <small>${esc(summary(p))}</small>
           ${p.savedToContacts ? `<small>✓ Saved ${esc(p.savedToContacts)}</small>` : ''}</span>
       </label>`).join('')}
     </div>`,
-  [{ label: 'Save to contacts', value: 'go', primary: true }, { label: 'Cancel', value: null }]);
-
-  // dialog() has put the dialog on screen by now: wire the quick buttons and keep the count on the main button.
-  const d = document.querySelector('dialog[open]');
-  const boxes = [...d.querySelectorAll('input[name=pick]')];
-  const saveButton = d.querySelector('.dialog-actions .primary');
-  const count = () => {
-    const n = boxes.filter(b => b.checked).length;
-    saveButton.textContent = n === 1 ? 'Save 1 person to contacts' : `Save ${n} people to contacts`;
-    saveButton.disabled = n === 0;
-  };
-  d.addEventListener('change', count);
-  d.addEventListener('click', e => {
-    const pick = e.target.closest('[data-pick]')?.dataset.pick;
-    if (!pick) return;
-    for (const b of boxes) b.checked = pick === 'all' || (pick === 'new' && !people.find(p => p.id === b.value).savedToContacts);
+  [{ label: 'Save to contacts', value: 'go', primary: true }, { label: 'Cancel', value: null }], d => {
+    // Wire the quick buttons and keep the count on the main button. A box starts ticked when not saved yet,
+    // so "Not saved yet" is simply each box's starting state.
+    boxes = [...d.querySelectorAll('input[name=pick]')];
+    const saveButton = d.querySelector('.dialog-actions .primary');
+    const count = () => {
+      const n = boxes.filter(b => b.checked).length;
+      saveButton.textContent = n === 1 ? 'Save 1 person to contacts' : `Save ${n} people to contacts`;
+      saveButton.disabled = n === 0;
+    };
+    d.addEventListener('change', count);
+    d.addEventListener('click', e => {
+      const pick = e.target.closest('[data-pick]')?.dataset.pick;
+      if (!pick) return;
+      for (const b of boxes) b.checked = pick === 'all' || (pick === 'new' && b.defaultChecked);
+      count();
+    });
     count();
   });
-  count();
 
-  const { value } = await pending;
   if (value !== 'go') return false;
-  const chosen = people.filter(p => boxes.some(b => b.checked && b.value === p.id));
-  await saveToContacts(ctx, chosen);
+  const ticked = new Set(boxes.filter(b => b.checked).map(b => b.value));
+  await saveToContacts(ctx, people.filter(p => ticked.has(p.id)));
   return true;
 }
 

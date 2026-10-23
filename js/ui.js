@@ -41,7 +41,8 @@ export function toast(message) {
 }
 
 // Modal dialog. `html` goes inside a <form> so callers can read inputs from `form.elements`.
-export function dialog(html, buttons) {
+// `onOpen(d)` gets this dialog's own element once it is on screen (to wire up extra controls).
+export function dialog(html, buttons, onOpen) {
   return new Promise(resolve => {
     const d = document.createElement('dialog');
     d.innerHTML = `<form class="dialog-body">${html}</form><div class="dialog-actions">${buttons.map((b, i) =>
@@ -58,6 +59,7 @@ export function dialog(html, buttons) {
     d.addEventListener('close', () => d.remove());
     document.body.append(d);
     d.showModal();
+    onOpen?.(d);
   });
 }
 
