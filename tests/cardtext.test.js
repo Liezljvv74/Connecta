@@ -96,3 +96,14 @@ test('icons read at the edges of a line are stripped from Other details, real te
   assert.deepEqual(p.extra.split('\n'), ['54 Stormvoël Crescent', '14612 Falkensee', 'Tel. 03322 1213996 / Fax 03322 1213997',
     'und nach Vereinbarung', '9 Main Road', 'Suite 4', 'Mo. + Do. 8:30-13:30 Uhr', '082 496 7019 ActionCOACH']);
 });
+
+test('icons read as a capital letter or a letter stuck to a symbol are stripped from the start of Other details lines', () => {
+  const p = parseCardText(lines(['JOHAN SOUTHEY', 19],
+    ['O 54 Stormvoël Crescent', 19], ['Q Vermont, Hermanus 7201', 19], ['(J 082 496 7019 ActionCOACH', 19],
+    ['©a Partner | Certified Business Coach', 19], ['G J) Roadside assistance 08 600 80 000', 19], ['14612 Falkensee (J', 19],
+    // real text that must stay
+    ['Dr Smith & Partners', 19], ['PO Box 1234', 19], ['De Waal Drive 5', 19], ['5 Main Road', 19], ['Unit A', 19], ['Mo. + Do. 8:30 Uhr', 19]));
+  assert.deepEqual(p.extra.split('\n'), ['54 Stormvoël Crescent', 'Vermont, Hermanus 7201', '082 496 7019 ActionCOACH',
+    'Partner | Certified Business Coach', 'Roadside assistance 08 600 80 000', '14612 Falkensee',
+    'Dr Smith & Partners', 'PO Box 1234', 'De Waal Drive 5', '5 Main Road', 'Unit A', 'Mo. + Do. 8:30 Uhr']);
+});
