@@ -39,7 +39,7 @@ Run after publishing to GitHub Pages; the camera and install need HTTPS. Use one
 - [ ] Scan → Business card: the live camera shows; hold a paper card in front of it and tap Take photo (also try one held sideways, and "Choose a photo instead"). The People form opens filled in; time it (first time includes a ~10 MB download).
 - [ ] Fresh install on Wi-Fi: open Connecta, wait a minute, turn on flight mode, then read a card: it works without ever having scanned one online.
 - [ ] Turn on flight mode and read another card: it still works.
-- [ ] Save a new person → "Also save … to your phone's contacts?" → Yes opens the phone's new-contact screen filled in (Android: Contacts opens directly, tap Save; iPhone: Create New Contact). Not now just saves to People.
+- [ ] Save a new person → "Also save … to your phone's contacts?" → Yes → iPhone: the contact opens, tap Create New Contact. Android: the contact file downloads and Connecta says where to tap; open it, choose Contacts, Save. Check the contact has name, company, phone, email. Not now just saves to People.
 - [ ] Deny camera permission: the help text appears.
 
 ## Backup

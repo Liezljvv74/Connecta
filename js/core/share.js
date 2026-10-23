@@ -1,5 +1,6 @@
 // Getting files and text off the phone: share sheet first, download or SMS/email as fallback (spec §4.2).
-import { personVCard, contactIntent } from './vcard.js';
+import { personVCard } from './vcard.js';
+import { dialog, esc } from '../ui.js';
 
 export const makeFile = (content, filename, type) => new File([content], filename, { type });
 
@@ -30,14 +31,22 @@ export async function shareFile(file, title = '') {
   return 'downloaded';
 }
 
-// Puts a person from People / Scan into the phone's contacts: Android opens its "new contact" screen,
-// other phones get the contact file (iPhone shows it with "Create New Contact").
-export function saveContact(p, nav = navigator, loc = location) {
-  if (/Android/i.test(nav.userAgent)) {
-    loc.href = contactIntent(p);
-    return Promise.resolve('opened');
+// Puts a person from People / Scan into the phone's contacts, as a contact file. iPhone shows it with
+// "Create New Contact". Android's Chrome can only download it (and won't open Contacts for a web page),
+// so the user is told where to tap.
+export async function saveContact(p) {
+  const fileName = `${safeFileName(p.name)}.vcf`;
+  const result = await shareFile(makeFile(personVCard(p), fileName, 'text/vcard'), p.name);
+  if (result === 'downloaded') {
+    await dialog(`
+      <h2>One more step</h2>
+      <p>The contact file <strong>${esc(fileName)}</strong> is in your Downloads.</p>
+      <ol>
+        <li>Tap <strong>Open</strong> on the download message, or the <strong>download notification</strong> at the top of the screen (or open <strong>My Files → Downloads</strong>).</li>
+        <li>Choose <strong>Contacts</strong> and tap <strong>Save</strong> (or <strong>Import</strong>).</li>
+      </ol>`, [{ label: 'OK', primary: true }]);
   }
-  return shareFile(makeFile(personVCard(p), `${safeFileName(p.name)}.vcf`, 'text/vcard'), p.name);
+  return result;
 }
 
 export async function shareText(text, title = '') {
