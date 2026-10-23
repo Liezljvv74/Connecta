@@ -44,7 +44,10 @@ export async function saveContact(p) {
       <ol>
         <li>Tap <strong>Open</strong> on the download message, or the <strong>download notification</strong> at the top of the screen (or open <strong>My Files → Downloads</strong>).</li>
         <li>Choose <strong>Contacts</strong> and tap <strong>Save</strong> (or <strong>Import</strong>).</li>
-      </ol>`, [{ label: 'OK', primary: true }]);
+        <li>If Contacts asks to send notifications, tap <strong>Allow</strong>: Samsung uses a notification to finish the import. You can switch it off later in Settings.</li>
+      </ol>
+      <p class="hint">Not saved? In Contacts: ☰ → Manage contacts → Import contacts → Internal storage → Download → ${esc(fileName)}.</p>`,
+    [{ label: 'OK', primary: true }]);
   }
   return result;
 }
