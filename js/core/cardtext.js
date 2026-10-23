@@ -23,14 +23,21 @@ const onlyJunkLeft = s => s.replace(/[^\p{L}\p{N}]/gu, '').length < 3;
 // Icons at the edge of a line are read as "4", "-" or "|": a name or company keeps only the parts with letters.
 const lettersOnly = s => s.split(' ').filter(w => /\p{L}/u.test(w)).join(' ');
 
-// Other details keeps whole lines but drops icons read at their edges: a lone symbol ("|", "-", "©"),
-// a lone small letter ("j"), or a lone digit in front of a number (the 📍 in "9 54 Stormvoël Crescent").
-const ICON_AT_EDGE = /^[^\p{L}\p{N}]$|^\p{Ll}$/u;
+// Other details keeps whole lines but drops icons (📍 ☎ ✉ 🌐) read at their edges. An icon comes out as
+// a lone symbol ("|", "©"), a lone letter ("j", "O", "Q"), a letter stuck to a symbol ("(J", "J)", "©a"),
+// or a lone digit in front of a number (the 📍 in "9 54 Stormvoël Crescent").
+// Real short words stay: "Dr", "PO Box", "De Waal", "Mo.", and house numbers like "5 Main Road".
+const alnum = w => w.replace(/[^\p{L}\p{N}]/gu, '').length;
+const stuckToSymbol = w => w.length <= 3 && /[^\p{L}\p{N}.,'/-]/u.test(w);
+const lowercaseOrSymbol = w => /^[^\p{L}\p{N}]+$|^\p{Ll}$/u.test(w);
+const iconAtStart = (w, next) => (/^\d+$/.test(w) ? /^\d$/.test(w) && /^\d/.test(next) : alnum(w) <= 1 || stuckToSymbol(w));
+// At the end a lone capital is real ("Unit A") and so is a digit ("Suite 4").
+const iconAtEnd = w => lowercaseOrSymbol(w) || (stuckToSymbol(w) && !/^\d+$/.test(w));
 function stripIcons(line) {
   const w = line.split(' ');
   for (;;) {
-    if (w.length > 1 && (ICON_AT_EDGE.test(w[0]) || (/^\d$/.test(w[0]) && /^\d/.test(w[1])))) w.shift();
-    else if (w.length > 1 && ICON_AT_EDGE.test(w.at(-1))) w.pop();
+    if (w.length > 1 && iconAtStart(w[0], w[1])) w.shift();
+    else if (w.length > 1 && iconAtEnd(w.at(-1))) w.pop();
     else return w.join(' ');
   }
 }
