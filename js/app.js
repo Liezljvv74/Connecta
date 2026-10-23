@@ -64,6 +64,7 @@ async function start() {
   requestPersist();
   addEventListener('hashchange', show);
   show();
+  import('./core/place.js').then(m => m.currentPlace()); // so Event is ready when the first person is added
   if ('serviceWorker' in navigator) {
     const hadController = !!navigator.serviceWorker.controller;
     const registration = navigator.serviceWorker.register('sw.js');

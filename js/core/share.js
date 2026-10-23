@@ -31,22 +31,16 @@ export async function shareFile(file, title = '') {
   return 'downloaded';
 }
 
-// Puts a person from People / Scan into the phone's contacts, as a contact file. iPhone shows it with
-// "Create New Contact". Android's Chrome can only download it (and won't open Contacts for a web page),
-// so the user is told where to tap.
+// Puts a person from People / Scan into the phone's contacts, as a contact file. iPhone gets the share list;
+// Android's Chrome can only download it (and won't open Contacts for a web page). The step-by-step help
+// is in About → "Saving people to your phone's contacts".
 export async function saveContact(p) {
   const fileName = `${safeFileName(p.name)}.vcf`;
   const result = await shareFile(makeFile(personVCard(p), fileName, 'text/vcard'), p.name);
   if (result === 'downloaded') {
     await dialog(`
-      <h2>One more step</h2>
-      <p>The contact file <strong>${esc(fileName)}</strong> is in your Downloads.</p>
-      <ol>
-        <li>Tap <strong>Open</strong> on the download message, or the <strong>download notification</strong> at the top of the screen (or open <strong>My Files → Downloads</strong>).</li>
-        <li>Choose <strong>Contacts</strong> and tap <strong>Save</strong> (or <strong>Import</strong>).</li>
-        <li>If Contacts asks to send notifications, tap <strong>Allow</strong>: Samsung uses a notification to finish the import. You can switch it off later in Settings.</li>
-      </ol>
-      <p class="hint">Not saved? In Contacts: ☰ → Manage contacts → Import contacts → Internal storage → Download → ${esc(fileName)}.</p>`,
+      <p><strong>${esc(fileName)}</strong> has been downloaded and can now be imported into your contacts.</p>
+      <p class="hint">How: tap ⓘ (top right) → Saving people to your phone's contacts.</p>`,
     [{ label: 'OK', primary: true }]);
   }
   return result;
