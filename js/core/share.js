@@ -1,5 +1,6 @@
 // Getting files and text off the phone: share sheet first, download or SMS/email as fallback (spec §4.2).
 import { personVCard } from './vcard.js';
+import { isoDate } from './model.js';
 import { dialog, esc } from '../ui.js';
 
 export const makeFile = (content, filename, type) => new File([content], filename, { type });
@@ -31,15 +32,16 @@ export async function shareFile(file, title = '') {
   return 'downloaded';
 }
 
-// Puts a person from People / Scan into the phone's contacts, as a contact file. iPhone gets the share list;
-// Android's Chrome can only download it (and won't open Contacts for a web page). The step-by-step help
-// is in About → "Saving people to your phone's contacts".
-export async function saveContact(p) {
-  const fileName = `${safeFileName(p.name)}.vcf`;
-  const result = await shareFile(makeFile(personVCard(p), fileName, 'text/vcard'), p.name);
+// Puts people from People / Scan into the phone's contacts, as ONE contact file (imported in one go).
+// iPhone gets the share list; Android's Chrome can only download it (and won't open Contacts for a web page).
+// The step-by-step help is in About → "Saving people to your phone's contacts".
+export async function saveContacts(people) {
+  const one = people.length === 1;
+  const fileName = one ? `${safeFileName(people[0].name)}.vcf` : `Connecta contacts ${isoDate()} (${people.length}).vcf`;
+  const result = await shareFile(makeFile(people.map(personVCard).join(''), fileName, 'text/vcard'), one ? people[0].name : 'Contacts');
   if (result === 'downloaded') {
     await dialog(`
-      <p><strong>${esc(fileName)}</strong> has been downloaded and can now be imported into your contacts.</p>
+      <p><strong>${esc(fileName)}</strong> has been downloaded and can now be imported into your contacts${one ? '' : ` (${people.length} people in one go)`}.</p>
       <p class="hint">How: tap ⓘ (top right) → Saving people to your phone's contacts.</p>`,
     [{ label: 'OK', primary: true }]);
   }

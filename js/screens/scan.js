@@ -2,7 +2,7 @@
 import QrScanner from '../../vendor/qr-scanner.min.js';
 import { parseScanned } from '../core/vcard.js';
 import { parseCardText } from '../core/cardtext.js';
-import { saveContact } from '../core/share.js';
+import { saveContacts } from '../core/share.js';
 import { readCard, warmUpCardReading, releaseCardReading } from '../core/ocr.js';
 import { esc, pickFile } from '../ui.js';
 
@@ -158,7 +158,7 @@ export function render(root, ctx) {
     if (act === 'pick') pickFile('image/*').then(readPhoto);
     if (act === 'again') { current = null; result.innerHTML = ''; start(); }
     if (act === 'log') ctx.go('people', { log: { ...current, source: 'scanned' } });
-    if (act === 'contact') saveContact(current);
+    if (act === 'contact') saveContacts([current]);
   });
 
   setMode('qr');

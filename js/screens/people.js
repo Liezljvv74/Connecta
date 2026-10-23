@@ -1,8 +1,8 @@
-// People I met: quick log, search, follow-up reminders, save to contacts, export (spec §3.4).
+// People I met: quick log, search, follow-up reminders, save to contacts (one or many), export (spec §3.4).
 import { newPerson, isoDate } from '../core/model.js';
 import { followUpIcs } from '../core/ics.js';
 import { exportRows, eventsIn, toCsv, toXlsx, exportFileName } from '../core/export.js';
-import { makeFile, shareFile, safeFileName, saveContact } from '../core/share.js';
+import { makeFile, shareFile, safeFileName, saveContacts } from '../core/share.js';
 import { currentPlace } from '../core/place.js';
 import { esc, dialog, confirmDialog, toast, loadScript } from '../ui.js';
 
@@ -56,10 +56,10 @@ function renderForm(root, ctx, person, isNew) {
       await ctx.save('people');
       if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
       toast('Saved');
-      // A web app can't write contacts itself; saveContact hands the phone a contact file.
+      // A web app can't write contacts itself; this hands the phone a contact file.
       if (isNew && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
         [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
-        await saveContact(person);
+        await saveToContacts(ctx, [person]);
       }
       ctx.go('people');
     }
@@ -69,6 +69,14 @@ function renderForm(root, ctx, person, isNew) {
       ctx.go('people');
     }
   });
+}
+
+// Makes one contact file for these people and remembers the date, so they aren't ticked again next time.
+async function saveToContacts(ctx, list) {
+  if (await saveContacts(list) === 'cancelled') return;
+  const today = isoDate();
+  for (const p of list) p.savedToContacts = today;
+  await ctx.save('people');
 }
 
 // Event = where you are now (editable); without a place (location refused, no signal…) the last typed event.
@@ -88,6 +96,7 @@ function renderList(root, ctx) {
     <div class="actions">
       <button type="button" class="primary" data-act="new">Add person</button>
       <button type="button" data-act="export">Export to Excel</button>
+      <button type="button" data-act="contacts">Add to my contacts</button>
     </div>
     <input type="search" id="q" placeholder="Search name, company, event, notes" aria-label="Search people">
     <ul class="list" id="list"></ul>`;
@@ -108,6 +117,7 @@ function renderList(root, ctx) {
             <strong>${esc(p.name)}</strong>
             <small>${esc([p.company, p.event, p.metAt && isoDate(new Date(p.metAt))].filter(Boolean).join(' · '))}</small>
             ${p.followUpDate ? `<small class="due">Follow up ${esc(p.followUpDate)}</small>` : ''}
+            ${p.savedToContacts ? `<small>✓ Saved to contacts ${esc(p.savedToContacts)}</small>` : ''}
           </button>
           <div class="row-actions">
             <button type="button" data-act="remind" data-id="${p.id}">Reminder</button>
@@ -135,7 +145,12 @@ function renderList(root, ctx) {
         shareFile(makeFile(followUpIcs(p), `follow-up-${safeFileName(p.name)}.ics`, 'text/calendar'), `Follow up: ${p.name}`);
         break;
       case 'contact':
-        saveContact(p);
+        await saveToContacts(ctx, [p]);
+        draw(root.querySelector('#q').value);
+        break;
+      case 'contacts':
+        if (!people.length) { toast('Log someone first, then you can add them to your contacts.'); break; }
+        if (await contactsDialog(ctx, people)) draw(root.querySelector('#q').value);
         break;
       case 'export':
         if (!people.length) { toast('Log someone first, then you can export.'); break; }
@@ -145,6 +160,51 @@ function renderList(root, ctx) {
   });
 
   draw('');
+}
+
+// Pick who goes into one contact file: everyone, no one, or only people not saved to contacts yet.
+async function contactsDialog(ctx, people) {
+  const sorted = [...people].sort((a, b) => (b.metAt || '').localeCompare(a.metAt || ''));
+  const pending = dialog(`
+    <h2>Add to my contacts</h2>
+    <p class="hint">Tick who to add. They go into one contact file that you import once.</p>
+    <div class="pick-quick">Tick:
+      <button type="button" class="link" data-pick="all">All</button>
+      <button type="button" class="link" data-pick="none">None</button>
+      <button type="button" class="link" data-pick="new">Not saved yet</button>
+    </div>
+    <div class="pick-list">${sorted.map(p => `
+      <label class="check"><input type="checkbox" name="pick" value="${p.id}"${p.savedToContacts ? '' : ' checked'}>
+        <span><strong>${esc(p.name)}</strong>
+          <small>${esc([p.company, p.event, p.metAt && isoDate(new Date(p.metAt))].filter(Boolean).join(' · '))}</small>
+          ${p.savedToContacts ? `<small>✓ Saved ${esc(p.savedToContacts)}</small>` : ''}</span>
+      </label>`).join('')}
+    </div>`,
+  [{ label: 'Save to contacts', value: 'go', primary: true }, { label: 'Cancel', value: null }]);
+
+  // dialog() has put the dialog on screen by now: wire the quick buttons and keep the count on the main button.
+  const d = document.querySelector('dialog[open]');
+  const boxes = [...d.querySelectorAll('input[name=pick]')];
+  const saveButton = d.querySelector('.dialog-actions .primary');
+  const count = () => {
+    const n = boxes.filter(b => b.checked).length;
+    saveButton.textContent = n === 1 ? 'Save 1 person to contacts' : `Save ${n} people to contacts`;
+    saveButton.disabled = n === 0;
+  };
+  d.addEventListener('change', count);
+  d.addEventListener('click', e => {
+    const pick = e.target.closest('[data-pick]')?.dataset.pick;
+    if (!pick) return;
+    for (const b of boxes) b.checked = pick === 'all' || (pick === 'new' && !people.find(p => p.id === b.value).savedToContacts);
+    count();
+  });
+  count();
+
+  const { value } = await pending;
+  if (value !== 'go') return false;
+  const chosen = people.filter(p => boxes.some(b => b.checked && b.value === p.id));
+  await saveToContacts(ctx, chosen);
+  return true;
 }
 
 async function exportDialog(people) {

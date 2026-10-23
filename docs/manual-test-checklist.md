@@ -40,6 +40,7 @@ Run after publishing to GitHub Pages; the camera and install need HTTPS. Use one
 - [ ] Fresh install on Wi-Fi: open Connecta, wait a minute, turn on flight mode, then read a card: it works without ever having scanned one online.
 - [ ] Turn on flight mode and read another card: it still works.
 - [ ] Open Connecta: the phone asks for location once. Add a person: Date met shows today (editable); Event already shows where you are (e.g. a venue and town) and can be edited. Refuse location: no error; Event shows the last event you typed (empty if none).
+- [ ] People → Add to my contacts: people not saved yet are ticked; All / None / Not saved yet work; the button shows the count. Save → one file with everyone ticked; import it once (ⓘ steps); all of them appear in Contacts. Next time they show ✓ Saved and are not ticked.
 - [ ] Save a new person → "Also save … to your phone's contacts?" → Yes → iPhone: the contact opens, tap Create New Contact. Android: the contact file downloads and a short message points to ⓘ → Saving people to your phone's contacts; follow those steps (open it, Contacts, Allow, Save). iPhone: check whether Contacts is in the share list, else Save to Files → open → Create New Contact. Check the contact has name, company, phone, email. Not now just saves to People.
 - [ ] Deny camera permission: the help text appears.
 

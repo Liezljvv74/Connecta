@@ -50,6 +50,7 @@ export function render(root, ctx) {
     <details>
       <summary>Saving people to your phone's contacts</summary>
       <p>After you save someone in People, Connecta asks whether to add them to your phone's contacts too. You can also tap <strong>Save contact</strong> next to anyone in People. Connecta then makes a <strong>contact file</strong> (for example <em>JOHAN SOUTHEY.vcf</em>) with their name, company, phone, email, website and notes. A web app isn't allowed to write to your contacts by itself, so you add the file with a few taps.</p>
+      <p><strong>Several people at once:</strong> in People, tap <strong>Add to my contacts</strong>. Tick everyone you want (<strong>All</strong>, <strong>None</strong> or <strong>Not saved yet</strong> to start from), then tap <strong>Save … to contacts</strong>. They all go into one file (for example <em>Connecta contacts 2026-10-23 (5).vcf</em>) that you import once with the steps below. People you've already saved show <em>✓ Saved to contacts</em> with the date, and aren't ticked next time.</p>
       <p><strong>Android (e.g. Samsung):</strong> the contact file is downloaded.</p>
       <ol>
         <li>Tap <strong>Open</strong> on the download message, or tap the <strong>download notification</strong> at the top of the screen. You can also find it later in <strong>My Files → Downloads</strong>.</li>
