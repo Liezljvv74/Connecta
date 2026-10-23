@@ -73,7 +73,7 @@ async function start() {
       reloadIfUpdated();
     });
     document.addEventListener('visibilitychange', reloadIfUpdated);
-    setTimeout(() => import('./screens/scan.js').then(m => m.prepareCardReading()).catch(() => {}), 5000);
+    setTimeout(() => import('./core/ocr.js').then(m => m.prepareCardReading()).catch(() => {}), 5000);
   }
 }
 

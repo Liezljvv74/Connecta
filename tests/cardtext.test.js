@@ -39,3 +39,22 @@ test('a company line with Pty Ltd wins over the website guess', () => {
 test('nothing readable gives empty fields', () => {
   assert.deepEqual(parseCardText([]), { name: '', company: '', phone: '', email: '', website: '', extra: '' });
 });
+
+test('an email or website with "group" in it is not taken as the company', () => {
+  const p = parseCardText(lines(['Jane Smith', 30], ['jane@acme-group.com', 18], ['www.smith-holdings.co.za', 18]));
+  assert.equal(p.company, 'Smith-holdings');
+  assert.equal(p.email, 'jane@acme-group.com');
+});
+
+test('a title read without its space ("Dr.Ute") is still the name, not a website', () => {
+  const p = parseCardText(lines(['Dr.Ute Kariger', 30], ['Augenarztin', 18]));
+  assert.equal(p.name, 'Dr.Ute Kariger');
+  assert.equal(p.website, '');
+  assert.equal(p.company, '');
+});
+
+test('a website on the same line as the email is found', () => {
+  const p = parseCardText(lines(['Jane Smith', 30], ['jane@acme.co.za | www.acme.co.za', 18]));
+  assert.equal(p.website, 'www.acme.co.za');
+  assert.equal(p.company, 'Acme');
+});

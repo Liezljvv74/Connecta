@@ -2,7 +2,9 @@
 // The reading is never perfect, so this only pre-fills the form; the user checks it before saving.
 
 const EMAIL = /[\w.+-]+@[\w-]+(\.[\w-]+)+/;
-const WEBSITE = /\b(https?:\/\/)?(www\.)?[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}(\/\S*)?/i;
+// A website starts with www./http, or ends in a common domain ending, so "Dr.Ute" (a lost space) isn't one.
+const TLDS = 'com|net|org|info|biz|io|co|za|de|uk|us|ca|au|nz|eu|fr|nl|be|ch|at|it|es|app|dev|me|tv|online|store|shop|africa';
+const WEBSITE = new RegExp(String.raw`\b(https?://\S+|www\.[a-z0-9-]+(\.[a-z0-9-]+)+(/\S*)?|[a-z0-9-]+(\.[a-z0-9-]+)*\.(${TLDS})\b(/\S*)?)`, 'i');
 const PHONE = /\+?\(?\d[\d ().-]{5,}\d/g;
 const PHONE_LABEL = /\b(tel|phone|mobile|mob|cell|[mt])\b/i;
 const COMPANY = /\b(pty|ltd|inc|llc|gmbh|ag|bv|cc|corp|company|group|holdings)\b\.?/i;
@@ -34,7 +36,7 @@ export function parseCardText(lines) {
   const all = lines.map(l => ({ text: l.text.replace(/\s+/g, ' ').trim(), height: l.height || 0 })).filter(l => l.text);
   const texts = all.map(l => l.text);
   const email = texts.map(t => t.match(EMAIL)?.[0]).find(Boolean) ?? '';
-  const website = texts.filter(t => !EMAIL.test(t)).map(t => t.match(WEBSITE)?.[0]).find(Boolean) ?? '';
+  const website = texts.map(t => t.replace(EMAIL, ' ').match(WEBSITE)?.[0]).find(Boolean) ?? '';
   const phone = pickPhone(texts);
 
   // The name is the biggest line of plain words, preferably at least two of them (a lone big word is usually a logo).
@@ -42,7 +44,7 @@ export function parseCardText(lines) {
   const biggest = list => list.reduce((a, b) => (b.height > a.height ? b : a), list[0]);
   const nameLine = biggest(plain.filter(l => words(l.text) >= 2)) ?? biggest(plain);
 
-  const companyLine = all.find(l => l !== nameLine && COMPANY.test(l.text));
+  const companyLine = all.find(l => l !== nameLine && !EMAIL.test(l.text) && !WEBSITE.test(l.text) && COMPANY.test(l.text));
   const domain = website.replace(/^(https?:\/\/)?(www\.)?/i, '').split(/[./]/)[0];
   const company = companyLine?.text ?? (domain ? domain[0].toUpperCase() + domain.slice(1) : '');
 
