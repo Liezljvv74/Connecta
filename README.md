@@ -2,7 +2,7 @@
 
 Your business card on your phone: share chosen contact details per business by QR code or contact file, read other people's cards (QR or paper), and keep a log of the people you meet. Installable web app (PWA) for iPhone and Android, no server, no accounts. Everything is stored on the phone; the only thing ever sent out is your coordinates, to OpenStreetMap, to name the place you are at (see Data and privacy).
 
-Design: `docs/superpowers/specs/2026-10-08-connecta-mobile-business-card-design.md` (written before paper-card reading and the place lookup were added; its "out of scope" list is partly outdated).
+Design: `docs/superpowers/specs/2026-10-08-connecta-mobile-business-card-design.md` (written before paper-card reading and the place lookup were added, and before the calendar reminder file was removed; its §3.4 reminder and its "out of scope" list are outdated).
 Phone test list: `docs/manual-test-checklist.md`.
 
 ## What it does
