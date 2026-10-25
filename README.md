@@ -31,6 +31,16 @@ Other behaviour:
 - Files leave the phone only when the user shares, downloads, exports or backs up.
 - The QR code holds plain text (vCard 3.0, at most 1000 bytes); photo and logo go only in the sent contact file. Pictures are shrunk to at most 400 px (photo as JPEG, logo as PNG) so files stay small enough for WhatsApp and email.
 
+## Help videos
+
+Three narrated videos exist (kept in the owner's folders, not in this repository; everyone in them is fictional and the tutorial shows no contact details at all):
+
+- **Set up Connecta, step by step** (about 4 min): install, Profile, Share, People, contacts, Excel export, Scan, Settings, About. For new users.
+- **Scan a card, save the person** (about 1½ min): photograph a paper card and save the person to the phone's contacts, on Android and iPhone.
+- **Feature demo** (about 1½ min): what Connecta does for people who network a lot.
+
+Every step in the videos is also written up in the app under ⓘ About.
+
 ## Run it locally
 
 ```
