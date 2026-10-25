@@ -1,8 +1,7 @@
-// People I met: quick log, search, follow-up reminders, save to contacts (one or many), export (spec §3.4).
+// People I met: quick log, search, follow-up dates, save to contacts (one or many), export (spec §3.4).
 import { newPerson, isoDate } from '../core/model.js';
-import { followUpIcs } from '../core/ics.js';
 import { exportRows, eventsIn, toCsv, toXlsx, exportFileName } from '../core/export.js';
-import { makeFile, shareFile, safeFileName, saveContacts } from '../core/share.js';
+import { makeFile, shareFile, saveContacts } from '../core/share.js';
 import { currentPlace } from '../core/place.js';
 import { esc, dialog, confirmDialog, toast, loadScript } from '../ui.js';
 
@@ -55,20 +54,26 @@ function renderForm(root, ctx, person, isNew) {
       const data = Object.fromEntries(new FormData(root.querySelector('#person')));
       if (!data.name.trim()) { toast('Add at least a name.'); return; }
       saving = true;
-      const { metDate, ...fields } = data;
-      if (CONTACT_FIELDS.some(k => (fields[k] ?? '').trim() !== (person[k] ?? ''))) delete person.savedToContacts;
-      for (const [key, value] of Object.entries(fields)) person[key] = value.trim();
-      if (metDate && metDate !== isoDate(new Date(person.metAt))) person.metAt = new Date(`${metDate}T12:00`).toISOString();
-      if (isNew) ctx.state.people.push(person);
-      await ctx.save('people');
-      if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
-      toast('Saved');
-      // A web app can't write contacts itself; this hands the phone a contact file.
-      if (isNew && !person.savedToContacts && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
-        [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
-        await saveToContacts(ctx, [person]);
+      try {
+        const { metDate, ...fields } = data;
+        if (CONTACT_FIELDS.some(k => (fields[k] ?? '').trim() !== (person[k] ?? ''))) delete person.savedToContacts;
+        for (const [key, value] of Object.entries(fields)) person[key] = value.trim();
+        if (metDate && metDate !== isoDate(new Date(person.metAt))) person.metAt = new Date(`${metDate}T12:00`).toISOString();
+        if (isNew) ctx.state.people.push(person);
+        await ctx.save('people');
+        if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
+        toast('Saved');
+        // A web app can't write contacts itself; this hands the phone a contact file.
+        if (isNew && !person.savedToContacts && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
+          [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
+          await saveToContacts(ctx, [person]);
+        }
+        ctx.go('people');
+      } catch (err) {
+        toast(`Could not finish: ${err.message}`);
+      } finally {
+        saving = false; // so Save works again if anything above failed
       }
-      ctx.go('people');
     }
     if (act === 'delete' && await confirmDialog(`Delete ${person.name}?`, 'Delete', true)) {
       ctx.state.people = ctx.state.people.filter(p => p.id !== person.id);
@@ -128,7 +133,6 @@ function renderList(root, ctx) {
             ${p.savedToContacts ? `<small>✓ Saved to contacts ${esc(p.savedToContacts)}</small>` : ''}
           </button>
           <div class="row-actions">
-            <button type="button" data-act="remind" data-id="${p.id}">Reminder</button>
             <button type="button" data-act="contact" data-id="${p.id}">Save contact</button>
           </div>
         </li>`).join('')
@@ -147,10 +151,6 @@ function renderList(root, ctx) {
         break;
       case 'edit':
         ctx.go('people', { edit: p.id });
-        break;
-      case 'remind':
-        if (!p.followUpDate) { toast('Set a follow-up date first: tap the person to edit.'); break; }
-        shareFile(makeFile(followUpIcs(p), `follow-up-${safeFileName(p.name)}.ics`, 'text/calendar'), `Follow up: ${p.name}`);
         break;
       case 'contact':
         await saveToContacts(ctx, [p]);

@@ -26,7 +26,7 @@ Run after publishing to GitHub Pages; the camera and install need HTTPS. Use one
 
 ## People I met
 - [ ] Log this person after sharing; event pre-filled on the next entry.
-- [ ] Reminder: the follow-up appears in the phone calendar on the right date with a 9am alert. (On Android, note whether the share sheet offers the calendar; if not, report it.)
+- [ ] A person with a follow-up date shows "Follow up <date>" in the list.
 - [ ] Save contact from the log opens the phone's contact screen.
 - [ ] Export Excel: opens in Excel or Google Sheets on the phone. Phone numbers keep their leading 0 and +.
 - [ ] Export CSV opens too.
