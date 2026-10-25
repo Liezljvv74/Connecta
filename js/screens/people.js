@@ -54,20 +54,26 @@ function renderForm(root, ctx, person, isNew) {
       const data = Object.fromEntries(new FormData(root.querySelector('#person')));
       if (!data.name.trim()) { toast('Add at least a name.'); return; }
       saving = true;
-      const { metDate, ...fields } = data;
-      if (CONTACT_FIELDS.some(k => (fields[k] ?? '').trim() !== (person[k] ?? ''))) delete person.savedToContacts;
-      for (const [key, value] of Object.entries(fields)) person[key] = value.trim();
-      if (metDate && metDate !== isoDate(new Date(person.metAt))) person.metAt = new Date(`${metDate}T12:00`).toISOString();
-      if (isNew) ctx.state.people.push(person);
-      await ctx.save('people');
-      if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
-      toast('Saved');
-      // A web app can't write contacts itself; this hands the phone a contact file.
-      if (isNew && !person.savedToContacts && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
-        [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
-        await saveToContacts(ctx, [person]);
+      try {
+        const { metDate, ...fields } = data;
+        if (CONTACT_FIELDS.some(k => (fields[k] ?? '').trim() !== (person[k] ?? ''))) delete person.savedToContacts;
+        for (const [key, value] of Object.entries(fields)) person[key] = value.trim();
+        if (metDate && metDate !== isoDate(new Date(person.metAt))) person.metAt = new Date(`${metDate}T12:00`).toISOString();
+        if (isNew) ctx.state.people.push(person);
+        await ctx.save('people');
+        if (person.event && person.event !== autoPlace) { ctx.state.settings.lastEvent = person.event; await ctx.save('settings'); }
+        toast('Saved');
+        // A web app can't write contacts itself; this hands the phone a contact file.
+        if (isNew && !person.savedToContacts && (await dialog(`<p>Also save ${esc(person.name)} to your phone's contacts?</p>`,
+          [{ label: 'Not now', value: false }, { label: 'Yes', value: true, primary: true }])).value) {
+          await saveToContacts(ctx, [person]);
+        }
+        ctx.go('people');
+      } catch (err) {
+        toast(`Could not finish: ${err.message}`);
+      } finally {
+        saving = false; // so Save works again if anything above failed
       }
-      ctx.go('people');
     }
     if (act === 'delete' && await confirmDialog(`Delete ${person.name}?`, 'Delete', true)) {
       ctx.state.people = ctx.state.people.filter(p => p.id !== person.id);

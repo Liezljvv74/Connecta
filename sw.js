@@ -2,7 +2,7 @@
 // VERSION matches js/version.js. BUILD is a fingerprint of the app files, written by `npm run stamp`;
 // any code change alters it, so phones always pick up the new files (a test checks it is current).
 const VERSION = 'connecta-1.0.15';
-const BUILD = '7ae3be5a7ee2';
+const BUILD = '73a7e472a175';
 const CACHE = `${VERSION}-${BUILD}`;
 // Card-reading files (~10 MB) are cached on first use only, and kept across app updates.
 // Change this name if the files in vendor/tesseract/ ever change.
