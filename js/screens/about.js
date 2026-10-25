@@ -76,7 +76,7 @@ export function render(root, ctx) {
         <li>Each detail has a character limit (shown next to it in Profile) so everything fits in one QR code.</li>
         <li>Turn your screen brightness up when people scan; it helps their camera.</li>
         <li>On the Share screen you can switch details off for one person. They switch back on next time.</li>
-        <li><strong>Reminder</strong> (People) makes a calendar file for the follow-up date. Open that file to add it to your calendar: on Android it lands in <strong>Downloads</strong>; on iPhone choose <strong>Save to Files</strong>, then open it from the <strong>Files</strong> app.</li>
+        <li>The follow-up date in People is a note for you: people with a date show <em>Follow up …</em> in the list, and the date is in the Excel export.</li>
         <li>Updates arrive automatically the next time you open the app with internet. Your data is not touched.</li>
       </ul>
     </details>

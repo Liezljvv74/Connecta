@@ -12,7 +12,7 @@ Five tabs plus ⓘ About (the About screen explains all of this to the user, wit
 | Screen | What it does |
 |---|---|
 | **Share** (home) | Shows the QR code for the chosen business, with a switcher when there is more than one. Each detail has a toggle, "Sharing with this person", to switch it off for this one person; the toggles reset when the screen is reopened. **Send card** shares the contact file (.vcf, with photo and logo) through the phone's share sheet; without file sharing it offers download, text message or email. **Log this person** opens the People form. The screen stays awake while the QR code is showing. If the card is too long for one QR code, the longest fields are suggested for switching off. |
-| **People** | The log of people met: name, company, phone, email, website, other details, event, notes, follow-up date, date met, which business card was given and how they were added. Event is pre-filled with the current place name (or the last event typed) and Date met with today. Search covers name, company, event and notes. Per person: **Reminder** (a calendar .ics file for the follow-up date, with a 9am alert, that the user opens to add to their calendar), **Save contact** (a .vcf file), Edit, Delete. **Add to my contacts** saves everyone ticked into one .vcf; people are marked "✓ Saved to contacts" only after the user confirms the import. **Export to Excel** (.xlsx, or CSV) with a choice of contact details, event notes, and one event or everyone. |
+| **People** | The log of people met: name, company, phone, email, website, other details, event, notes, follow-up date, date met, which business card was given and how they were added. Event is pre-filled with the current place name (or the last event typed) and Date met with today. Search covers name, company, event and notes. People with a follow-up date show "Follow up <date>" in the list (the date is a note, not a calendar entry). Per person: **Save contact** (a .vcf file), Edit, Delete. **Add to my contacts** saves everyone ticked into one .vcf; people are marked "✓ Saved to contacts" only after the user confirms the import. **Export to Excel** (.xlsx, or CSV) with a choice of contact details, event notes, and one event or everyone. |
 | **Scan** | **QR code** mode reads someone's QR business card with the camera and shows the details with "Add to People I met" and "Save to my contacts". **Business card** mode photographs a paper card (or picks a photo) and reads it on the phone; the People form opens pre-filled for checking. Sideways photos are handled. |
 | **Profile** | My details shared by every business (name, photo, mobile, work phone, email, website, address, LinkedIn/social link) and the list of businesses. Each business has a name, logo, job title, its own values for any detail (overriding the personal ones) and which details are shared by default. Each field has a character limit, shown in the form, so a full card fits in one QR code. |
 | **Settings** | **Back up now** (one JSON file with everything), **Restore from backup** (confirmed before anything is replaced; refuses files from a newer app version or damaged files), **Delete all data** (type DELETE to confirm). |
@@ -53,7 +53,7 @@ Uses Node's built-in test runner (Node 22+). There is nothing to install. The te
 | `js/app.js` | Loads data, switches screens by URL hash (`#share`, `#people`, …), starts the place lookup, registers offline support and the update check, starts the card-reading download. |
 | `js/ui.js` | Shared UI helpers: HTML escaping (`esc`, used for every typed or scanned value), toast, dialogs, file picker, script loader, keep-screen-awake. |
 | `js/version.js` | App version and the support email shown in About. |
-| `js/core/` | All logic, no screen code: contact cards and sharing rules (`card.js`), vCard build/parse (`vcard.js`), QR (`qr.js`), paper-card reading (`ocr.js`, `cardtext.js`), place lookup (`place.js`), sharing and saving files (`share.js`), backup (`backup.js`), Excel/CSV export (`export.js`), calendar file (`ics.js`), image shrinking (`image.js`). Reusable by any future UI. |
+| `js/core/` | All logic, no screen code: contact cards and sharing rules (`card.js`), vCard build/parse (`vcard.js`), QR (`qr.js`), paper-card reading (`ocr.js`, `cardtext.js`), place lookup (`place.js`), sharing and saving files (`share.js`), backup (`backup.js`), Excel/CSV export (`export.js`), image shrinking (`image.js`). Reusable by any future UI. |
 | `js/core/storage.js` | The only file that touches IndexedDB. Data has a `schemaVersion`; upgrades go in `migrate()` in `model.js`. |
 | `js/core/model.js` | Field lists, labels, the per-field character limits (`MAX_LENGTHS`) that keep a full card inside one QR code, and the shape of a business and a person. |
 | `js/screens/` | One file per screen. Each exports `render(root, ctx, params)` and may return a cleanup function. |
@@ -94,12 +94,12 @@ Repository: https://github.com/Liezljvv74/Connecta
 
 ## Limits of a web app
 
-- A web app cannot write to the phone's contacts or calendar by itself. Connecta makes the contact or calendar file and the user adds it with a few taps (About explains how on Android and iPhone). Android's Chrome only downloads such files; iPhone offers the share list.
+- A web app cannot write to the phone's contacts by itself. Connecta makes the contact file and the user adds it with a few taps (About explains how on Android and iPhone). The same applies to the calendar, so the follow-up date is kept as a note only; calendar entries wait for the app-store version. Android's Chrome only downloads such files; iPhone offers the share list.
 - Install needs Safari on iPhone and Chrome on Android (see About → Installing).
 - iPhones can clear web-app data when storage runs low or the app is unused for a long time, hence backups.
 
 ## Upgrading later
 
 - **Framework (e.g. React):** keep `js/core/` as it is and rebuild only `js/screens/`.
-- **App stores:** wrap the app with Capacitor (https://capacitorjs.com). Storage, sharing, contacts, calendar and camera access then have native equivalents.
+- **App stores:** wrap the app with Capacitor (https://capacitorjs.com). Storage, sharing, contacts, calendar (follow-up reminders) and camera access then have native equivalents.
 - **Logo/photo in the scanned card:** needs online hosting of each card (out of scope for now; see the spec §9).

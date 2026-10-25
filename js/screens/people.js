@@ -1,8 +1,7 @@
-// People I met: quick log, search, follow-up reminders, save to contacts (one or many), export (spec §3.4).
+// People I met: quick log, search, follow-up dates, save to contacts (one or many), export (spec §3.4).
 import { newPerson, isoDate } from '../core/model.js';
-import { followUpIcs } from '../core/ics.js';
 import { exportRows, eventsIn, toCsv, toXlsx, exportFileName } from '../core/export.js';
-import { makeFile, shareFile, safeFileName, saveContacts } from '../core/share.js';
+import { makeFile, shareFile, saveContacts } from '../core/share.js';
 import { currentPlace } from '../core/place.js';
 import { esc, dialog, confirmDialog, toast, loadScript } from '../ui.js';
 
@@ -128,7 +127,6 @@ function renderList(root, ctx) {
             ${p.savedToContacts ? `<small>✓ Saved to contacts ${esc(p.savedToContacts)}</small>` : ''}
           </button>
           <div class="row-actions">
-            <button type="button" data-act="remind" data-id="${p.id}">Reminder</button>
             <button type="button" data-act="contact" data-id="${p.id}">Save contact</button>
           </div>
         </li>`).join('')
@@ -147,10 +145,6 @@ function renderList(root, ctx) {
         break;
       case 'edit':
         ctx.go('people', { edit: p.id });
-        break;
-      case 'remind':
-        if (!p.followUpDate) { toast('Set a follow-up date first: tap the person to edit.'); break; }
-        shareFile(makeFile(followUpIcs(p), `follow-up-${safeFileName(p.name)}.ics`, 'text/calendar'), `Follow up: ${p.name}`);
         break;
       case 'contact':
         await saveToContacts(ctx, [p]);
